@@ -16,15 +16,22 @@ struct MaxRectsNode
 };
 class MaxRects
 {
+	MaxRectsNode root;
+	int w, h;
+	QPoint alignment;
+
     public:
-        MaxRects();
+        MaxRects(int width, int height, QPoint align);
         QList<MaxRectsNode> F;
         QList<QRect> R;
         QList<MaxRectsNode *> FR;
         QPoint insertNode(inputImage *);
-        int heuristic, w, h, rotation;
+        int heuristic, rotation;
         bool leftToRight;
         border_t *border;
+
+		inline int width()  const { return w / alignment.x(); }
+		inline int height() const { return h / alignment.y(); }
 };
 
 #endif // MAXRECTS_H

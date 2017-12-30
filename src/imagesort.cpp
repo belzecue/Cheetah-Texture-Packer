@@ -34,19 +34,20 @@ bool ImageCompareByMax(const inputImage &i1, const inputImage &i2)
 
 void ImagePacker::sort()
 {
+	//when sort wasn't stable it was impossible to discenern what duplicates got removed.
     switch(sortOrder)
     {
     case 1:
-        qSort(images.begin(), images.end(), ImageCompareByWidth);
+        qStableSort(images.begin(), images.end(), ImageCompareByWidth);
         break;
     case 2:
-        qSort(images.begin(), images.end(), ImageCompareByHeight);
+        qStableSort(images.begin(), images.end(), ImageCompareByHeight);
         break;
     case 3:
-        qSort(images.begin(), images.end(), ImageCompareByArea);
+        qStableSort(images.begin(), images.end(), ImageCompareByArea);
         break;
     case 4:
-        qSort(images.begin(), images.end(), ImageCompareByMax);
+        qStableSort(images.begin(), images.end(), ImageCompareByMax);
         break;
     }
 }

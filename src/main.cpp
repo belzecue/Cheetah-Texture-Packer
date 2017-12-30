@@ -14,6 +14,7 @@
 #include <QPainter>
 #include "stdio.h"
 #include "stdlib.h"
+#include <cassert>
 
 QStringList imageExtensions;
 
@@ -442,85 +443,7 @@ int main(int argc, char *argv[])
             if(packer.images.at(i).textureId < packer.bins.size())
             {
                 QPainter p(&textures.operator [](packer.images.at(i).textureId));
-
-                if(packer.extrude)
-                {
-                    QColor color1 = QColor::fromRgba(img.pixel(crop.x(), crop.y()));
-                    p.setPen(color1);
-                    p.setBrush(color1);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x(), pos.y()));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x(), pos.y(), packer.extrude - 1, packer.extrude - 1));
-                    }
-
-                    QColor color2 = QColor::fromRgba(img.pixel(crop.x(),
-                                                     crop.y() + crop.height() - 1));
-                    p.setPen(color2);
-                    p.setBrush(color2);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x(), pos.y() + crop.height() + packer.extrude));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x(), pos.y() + crop.height() + packer.extrude,
-                                         packer.extrude - 1, packer.extrude - 1));
-                    }
-
-                    QColor color3 = QColor::fromRgba(img.pixel(crop.x() + crop.width() - 1,
-                                                     crop.y()));
-                    p.setPen(color3);
-                    p.setBrush(color3);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x() + crop.width() + packer.extrude, pos.y()));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x() + crop.width() + packer.extrude, pos.y(),
-                                         packer.extrude - 1, packer.extrude - 1));
-                    }
-
-                    QColor color4 = QColor::fromRgba(img.pixel(crop.x() + crop.width() - 1,
-                                                     crop.y() + crop.height() - 1));
-                    p.setPen(color4);
-                    p.setBrush(color4);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x() + crop.width() + packer.extrude,
-                                           pos.y() + crop.height() + packer.extrude));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x() + crop.width() + packer.extrude,
-                                         pos.y() + crop.height() + packer.extrude, packer.extrude - 1,
-                                         packer.extrude - 1));
-                    }
-
-                    p.drawImage(QRect(pos.x(), pos.y() + packer.extrude, packer.extrude,
-                                      crop.height()), img, QRect(crop.x(), crop.y(), 1, crop.height()));
-                    p.drawImage(QRect(pos.x() + crop.width() + packer.extrude,
-                                      pos.y() + packer.extrude, packer.extrude, crop.height()), img,
-                                QRect(crop.x() + crop.width() - 1, crop.y(), 1, crop.height()));
-
-                    p.drawImage(QRect(pos.x() + packer.extrude, pos.y(), crop.width(),
-                                      packer.extrude), img, QRect(crop.x(), crop.y(), crop.width(), 1));
-                    p.drawImage(QRect(pos.x() + packer.extrude,
-                                      pos.y() + crop.height() + packer.extrude, crop.width(), packer.extrude), img,
-                                QRect(crop.x(), crop.y() + crop.height() - 1, crop.width(), 1));
-
-                    p.drawImage(pos.x() + packer.extrude, pos.y() + packer.extrude, img, crop.x(),
-                                crop.y(), crop.width(), crop.height());
-                }
-                else
-                {
-                    p.drawImage(pos.x(), pos.y(), img, crop.x(), crop.y(), crop.width(),
-                                crop.height());
-                }
+				MainWindow::drawImage(p, img, pos, crop, packer);
             }
         }
         qint64 area = 0;

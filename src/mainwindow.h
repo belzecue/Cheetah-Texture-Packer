@@ -28,6 +28,8 @@ class MainWindow : public QMainWindow
         Q_OBJECT
 
     public:
+		static void drawCorner(QPainter & p, QColor c, const QRect & target);
+		static void drawImage(QPainter & p, QImage & img, QPoint pos, const QRect & crop, ImagePacker & packer);
         explicit MainWindow(QWidget *parent = 0);
         ~MainWindow();
 

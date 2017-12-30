@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QImage>
+#include <QRgb>
 
 class MaxRects;
 
@@ -47,6 +48,7 @@ class ImagePacker : public QObject
         QList<inputImage> images;
         QList<QSize> bins;
         ImagePacker();
+
         bool compareImages(QImage *img1, QImage *img2, int *i, int *j);
         void pack(int heur, int w, int h);
 
@@ -64,6 +66,8 @@ class ImagePacker : public QObject
         int FillBin(int heur, int w, int h, int binIndex);
 
         QRect crop(const QImage &img);
+		void applyGreenScreen(QImage & img);
+
         void sort();
         void addItem(const QImage &img, void *data, QString path);
         void addItem(QString path, void *data);
@@ -79,6 +83,11 @@ class ImagePacker : public QObject
         int cropThreshold;
         border_t border;
         int extrude;
+		QPoint alignment;
+//considered to be transparent if fomrat has no alpha channel.
+		QRgb   greenScreen;
+		bool   greenScreenToAlpha;
+		bool   useGreenScreen;
         int rotate;
         int sortOrder;
         int minFillRate;

@@ -4,6 +4,8 @@
 #include <QMessageBox>
 #include <QTextStream>
 #include <QMimeData>
+#include <cassert>
+#include <iostream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -295,92 +297,15 @@ void MainWindow::packerUpdate()
                 p.fillRect(pos.x(), pos.y(), size.width() + 2 * packer.extrude,
                            size.height() + 2 * packer.extrude, pattern);
             }
+
             if(previewWithImages || exporting)
             {
-                if(packer.extrude)
-                {
-                    QColor color1 = QColor::fromRgba(img.pixel(crop.x(), crop.y()));
-                    p.setPen(color1);
-                    p.setBrush(color1);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x(), pos.y()));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x(), pos.y(), packer.extrude - 1, packer.extrude - 1));
-                    }
-
-                    QColor color2 = QColor::fromRgba(img.pixel(crop.x(),
-                                                     crop.y() + crop.height() - 1));
-                    p.setPen(color2);
-                    p.setBrush(color2);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x(), pos.y() + crop.height() + packer.extrude));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x(), pos.y() + crop.height() + packer.extrude,
-                                         packer.extrude - 1, packer.extrude - 1));
-                    }
-
-                    QColor color3 = QColor::fromRgba(img.pixel(crop.x() + crop.width() - 1,
-                                                     crop.y()));
-                    p.setPen(color3);
-                    p.setBrush(color3);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x() + crop.width() + packer.extrude, pos.y()));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x() + crop.width() + packer.extrude, pos.y(),
-                                         packer.extrude - 1, packer.extrude - 1));
-                    }
-
-                    QColor color4 = QColor::fromRgba(img.pixel(crop.x() + crop.width() - 1,
-                                                     crop.y() + crop.height() - 1));
-                    p.setPen(color4);
-                    p.setBrush(color4);
-                    if(packer.extrude == 1)
-                    {
-                        p.drawPoint(QPoint(pos.x() + crop.width() + packer.extrude,
-                                           pos.y() + crop.height() + packer.extrude));
-                    }
-                    else
-                    {
-                        p.drawRect(QRect(pos.x() + crop.width() + packer.extrude,
-                                         pos.y() + crop.height() + packer.extrude, packer.extrude - 1,
-                                         packer.extrude - 1));
-                    }
-
-                    p.drawImage(QRect(pos.x(), pos.y() + packer.extrude, packer.extrude,
-                                      crop.height()), img, QRect(crop.x(), crop.y(), 1, crop.height()));
-                    p.drawImage(QRect(pos.x() + crop.width() + packer.extrude,
-                                      pos.y() + packer.extrude, packer.extrude, crop.height()), img,
-                                QRect(crop.x() + crop.width() - 1, crop.y(), 1, crop.height()));
-
-                    p.drawImage(QRect(pos.x() + packer.extrude, pos.y(), crop.width(),
-                                      packer.extrude), img, QRect(crop.x(), crop.y(), crop.width(), 1));
-                    p.drawImage(QRect(pos.x() + packer.extrude,
-                                      pos.y() + crop.height() + packer.extrude, crop.width(), packer.extrude), img,
-                                QRect(crop.x(), crop.y() + crop.height() - 1, crop.width(), 1));
-
-                    p.drawImage(pos.x() + packer.extrude, pos.y() + packer.extrude, img, crop.x(),
-                                crop.y(), crop.width(), crop.height());
-                }
-                else
-                {
-                    p.drawImage(pos.x(), pos.y(), img, crop.x(), crop.y(), crop.width(),
-                                crop.height());
-                }
+				drawImage(p, img, pos, crop, packer);
             }
-            else
-                if(!exporting)
-                {
-                    p.drawRect(pos.x(), pos.y(), size.width() - 1, size.height() - 1);
-                }
+            else if(!exporting)
+			{
+				p.drawRect(pos.x(), pos.y(), size.width() - 1, size.height() - 1);
+			}
         }
     }
     for(int i = 0; i < textures.count(); i++)
@@ -518,7 +443,7 @@ void MainWindow::dropEvent(QDropEvent *event)
             data->listItem = ui->tilesList->item(ui->tilesList->count() - 1);
             data->path = fileInfo.absoluteFilePath();
             packer.addItem(data->path, data);
-            //QMessageBox::information(this, tr("Dropped file"), "Dropping files is not supported yet. Drad and drop directory here.");
+            //QMessageBox::information(this, tr("Dropped file"), "Dropping files is not supported yet. Drag and drop directory here.");
         }
         else
             if(fileInfo.isDir())
@@ -529,4 +454,124 @@ void MainWindow::dropEvent(QDropEvent *event)
     packerUpdate();
 
     event->acceptProposedAction();
+}
+
+void MainWindow::drawImage(QPainter & p, QImage & img, QPoint pos, const QRect & crop, ImagePacker & packer)
+{
+	packer.applyGreenScreen(img);
+
+	p.save();
+	p.translate(pos);
+
+	int extrude_l = 0;
+	int extrude_t = 0;
+	int extrude_r = 0;
+	int extrude_b = 0;
+
+	if(packer.alignment.x())
+	{
+		extrude_r = (crop.width()  + 2*packer.extrude) % packer.alignment.x();
+		if(extrude_r) extrude_r = packer.alignment.x() - extrude_r;
+	}
+	if(packer.alignment.y())
+	{
+		extrude_b = (crop.height() + 2*packer.extrude) % packer.alignment.y();
+		if(extrude_b) extrude_b = packer.alignment.y() - extrude_b;
+	}
+
+	extrude_r += 2*packer.extrude;
+	extrude_b += 2*packer.extrude;
+
+//compression gets better quality if more px in block of 4 are the same, so distribute it.
+	extrude_l  = extrude_r >> 1; extrude_r -= extrude_l;
+	extrude_t  = extrude_b >> 1; extrude_b -= extrude_t;
+
+//top left
+	if(extrude_t && extrude_l)
+	{
+		QRect target = QRect(0, 0, extrude_l - 1, extrude_t - 1);
+		QColor c = QColor::fromRgba(img.pixel(crop.x(), crop.y()));
+		drawCorner(p, c, target);
+	}
+
+//bottom left
+	if(extrude_l && extrude_b)
+	{
+		QRect target = QRect(0, crop.height() + extrude_t, extrude_l - 1, extrude_b - 1);
+		QColor c = QColor::fromRgba(img.pixel(crop.x(), crop.bottom()));
+		drawCorner(p, c, target);
+	}
+
+//top right
+	if(extrude_t && extrude_r)
+	{
+		QRect target = QRect(crop.width() + extrude_l, 0, extrude_r - 1, extrude_t - 1);
+		QColor c = QColor::fromRgba(img.pixel(crop.right(), crop.y()));
+		drawCorner(p, c, target);
+	}
+
+//bottom right
+	if(extrude_b && extrude_r)
+	{
+		QRect target = QRect(crop.width() + extrude_l, crop.height() + extrude_t, extrude_r - 1, extrude_b - 1);
+		QColor c = QColor::fromRgba(img.pixel(crop.right(), crop.bottom()));
+		drawCorner(p, c, target);
+	}
+
+//left edge
+	if(extrude_l)
+	{
+		QRect target = QRect(0, extrude_t, extrude_l, crop.height());
+		QRect source = QRect(crop.x(), crop.y(), 1, crop.height());
+
+		p.drawImage(target, img, source);
+	}
+
+//right edge
+	if(extrude_r)
+	{
+		QRect target = QRect(crop.width() + extrude_l, extrude_t, extrude_r, crop.height());
+		QRect source = QRect(crop.right(), crop.y(), 1, crop.height());
+
+		p.drawImage(target, img, source);
+	}
+
+//top edge
+	if(extrude_t)
+	{
+		QRect target = QRect(extrude_l, 0, crop.width(), extrude_t);
+		QRect source = QRect(crop.x(), crop.y(), crop.width(), 1);
+
+		p.drawImage(target, img, source);
+	}
+//bottom edge
+	if(extrude_b)
+	{
+		QRect target = QRect(extrude_l, crop.height() + extrude_t, crop.width(), extrude_b);
+		QRect source = QRect(crop.x(), crop.bottom(), crop.width(), 1);
+
+		p.drawImage(target, img, source);
+	}
+
+
+	p.drawImage(extrude_l, extrude_t, img, crop.x(), crop.y(), crop.width(), crop.height());
+
+	p.restore();
+}
+
+void MainWindow::drawCorner(QPainter & p, QColor c, const QRect & target)
+{
+	assert(target.width() >= 0 && target.height() >= 0);
+
+	p.setPen(c);
+	p.setBrush(c);
+
+	if(target.width() && target.height())
+		p.drawRect(target);
+	else if(target.width())
+		p.drawLine(target.x(), target.y(), target.right()+1, target.y());
+	else if(target.height())
+		p.drawLine(target.x(), target.y(), target.x(), target.bottom()+1);
+	else
+		p.drawPoint(target.topLeft());
 }

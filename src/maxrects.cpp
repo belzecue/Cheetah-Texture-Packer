@@ -1,7 +1,12 @@
 #include "maxrects.h"
 
-MaxRects::MaxRects()
+MaxRects::MaxRects(int w, int h, QPoint align) :
+	w(w),
+	h(h),
+	alignment(align)
 {
+	root.r = QRect(0, 0, width(), height());
+	F << root;
 }
 
 QPoint MaxRects::insertNode(inputImage *input)
@@ -15,6 +20,7 @@ QPoint MaxRects::insertNode(inputImage *input)
     {
         return QPoint(0, 0);
     }
+
     bool leftNeighbor = false, rightNeighbor = false;
     bool _leftNeighbor = false, _rightNeighbor = false;
     bool rotated, bestIsRotated = false;
@@ -207,7 +213,8 @@ QPoint MaxRects::insertNode(inputImage *input)
                 }
             }
         }
-        return QPoint(n0.r.x(), n0.r.y());
+
+		return QPoint(n0.r.x(), n0.r.y());
     }
     return QPoint(999999, 999999);
 }
