@@ -50,7 +50,7 @@ Additional command line features
 
 Screenshot:
 
-![Screenshot](https://github.com/pdJeeves/Cheetah-Texture-Packer/raw/master/screen.png)
+![Screenshot](https://github.com/pdJeeves/Cheetah-Texture-Packer/raw/master/screenshot.png)
 
 References:
 
