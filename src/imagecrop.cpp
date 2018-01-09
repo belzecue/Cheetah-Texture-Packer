@@ -2,31 +2,19 @@
 #include <QHash>
 
 #define CMPF1(x,y,a) (qAlpha(img.pixel(x,y)) <= a)
-#define CMP(x,y,a) if(CMPF1(x,y,a)) {t = false; break;} if(!t) break;
 #define CMPF3(x,y,a) (img.pixel(x,y) == a)
 
 /*
 #define CMPF1(x,y,a) (qAlpha(img.pixel(x,y)) > a)
-
 */
 
-static
-bool doesImageHaveAlpha(const QImage &img)
-{
-	if(!img.hasAlphaChannel()) return false;
+#ifdef _WIN32
+#undef min
+#undef max
+#endif
 
-//it may have been added during conversion/loading.
-	for(int y = 0; y < img.height(); y++)
-	{
-		for(int x = 0; x < img.width(); x++)
-		{
-			if(qAlpha(img.pixel(x,y)) != 255)
-				return true;
-		}
-	}
-
-	return false;
-}
+//should be cached; is in the inputimage.cpp variation.
+static bool doesImageHaveAlpha(const QImage & image);
 
 //auto-cropping algorithm
 QRect ImagePacker::crop(const QImage &img)
@@ -133,39 +121,42 @@ QRect ImagePacker::crop(const QImage &img)
 		}
 	}
 
-    w = w - x;
-    h = h - y;
-    if(w < 0)
-    {
-        w = 0;
-    }
-    if(h < 0)
-    {
-        h = 0;
-    }
-    return QRect(x, y, w, h);
+    if(w < x) w = x;
+    if(h < y) h = y;
+
+    return QRect(x, y, w-x, h-x);
+}
+void ImagePacker::applyGreenScreen(QImage & image)
+{
+	if(!useGreenScreen
+	|| !greenScreenToAlpha
+	|| doesImageHaveAlpha(image)) return;
+
+	for(int y = 0; y < image.height(); ++y)
+	{
+		for(int x = 0; x < image.width(); ++x)
+		{
+			QRgb px = image.pixel(x, y);
+			if(px == greenScreen)
+				image.setPixel(x, y, 0L);
+		}
+	}
 }
 
-void ImagePacker::applyGreenScreen(QImage & img)
+
+static bool doesImageHaveAlpha(const QImage & image)
 {
-	if(!useGreenScreen || !greenScreenToAlpha || doesImageHaveAlpha(img))
-		return;
+	if(!image.hasAlphaChannel()) return false;
 
-	if(!img.hasAlphaChannel())
+	for(int y = 0; y < image.height(); ++y)
 	{
-//only one known to be lossless...
-		img = img.convertToFormat(QImage::Format_ARGB32);
-	}
-
-	for(int y = 0; y < img.height(); y++)
-	{
-		for(int x = 0; x < img.width(); x++)
+		for(int x = 0; x < image.width(); ++x)
 		{
-			if(img.pixel(x,y) == greenScreen)
-				img.setPixel(x, y, qRgba(0, 0, 0, 0));
+			if(qAlpha(image.pixel(x, y)) < UCHAR_MAX)
+				return true;
 		}
 	}
 
-
-
+	return false;
 }
+

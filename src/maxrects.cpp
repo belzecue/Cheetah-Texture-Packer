@@ -1,220 +1,187 @@
 #include "maxrects.h"
+#include <iostream>
+#include <climits>
+#include <cassert>
 
-MaxRects::MaxRects(int w, int h, QPoint align) :
+MaxRects::MaxRects(int w, int h, int border, QPoint align) :
 	w(w),
 	h(h),
 	alignment(align)
 {
-	root.r = QRect(0, 0, width(), height());
-	F << root;
+    F.push_back(QRect(border, border, w-border*2, h-border*2));
 }
 
 QPoint MaxRects::insertNode(inputImage *input)
 {
-    int i;
-    int min = 999999999, mini = -1, m;
+    int min = INT_MAX, mini = -1;
     QSize img = input->sizeCurrent;
+
     //    if(img.width() == w) img.setWidth(img.width() - border->l - border->r);
     //    if(img.height() == h) img.setHeight(img.height() - border->t - border->b);
-    if(img.width() == 0 || img.height() == 0)
+    if(img.width() <= 1 || img.height() <= 1)
     {
-        return QPoint(0, 0);
+        return QPoint(-1, -1);
     }
 
     bool leftNeighbor = false, rightNeighbor = false;
     bool _leftNeighbor = false, _rightNeighbor = false;
-    bool rotated, bestIsRotated = false;
-    for(i = 0; i < F.size(); i++)
+    bool bestIsRotated = false;
+
+    for(int i = 0; i < F.size(); i++)
     {
-        if((F.at(i).r.width() >= img.width() && F.at(i).r.height() >= img.height()) ||
-                (F.at(i).r.width() >= img.height() && F.at(i).r.height() >= img.width()))
-        {
-            rotated = false;
-            m = 0;
-            if((F.at(i).r.width() >= img.height() && F.at(i).r.height() >= img.width()) &&
-                    !(F.at(i).r.width() >= img.width() && F.at(i).r.height() >= img.height()))
+        QRect itr = F[i];
+
+//check each image with and without rotation
+		bool rotated = false;
+
+		for(;;)
+		{
+            //can we fit in this hole?
+            if(itr.width() >= img.width() && itr.height() >= img.height())
             {
-                if(rotation == 0)
+                const int m = calculateHeuristic(itr, img, _leftNeighbor, _rightNeighbor);
+
+                if(m < min)
                 {
-                    continue;
+                    min = m;
+                    mini = i;
+                    leftNeighbor = _leftNeighbor;
+                    rightNeighbor = _rightNeighbor;
+                    bestIsRotated = rotated;
                 }
-                //                input->rotated = !input->rotated;
-                //                input->sizeCurrent.transpose();
-                img.transpose();
-                rotated = true;
-                m += img.height();
-            }
-            switch(heuristic)
-            {
-            case ImagePacker::NONE:
-                mini = i;
-                i = F.size();
-                continue;
-            case ImagePacker::TL:
-                m += F.at(i).r.y();
-                _leftNeighbor = _rightNeighbor = false;
-                for(int k = 0; k < R.size(); k++)
-                {
-                    if(qAbs(R.at(k).y() + R.at(k).height() / 2 - F.at(i).r.y() - F.at(
-                                i).r.height() / 2) <
-                            qMax(R.at(k).height(), F.at(i).r.height()) / 2)
-                    {
-                        if(R.at(k).x() + R.at(k).width() == F.at(i).r.x())
-                        {
-                            m -= 5;
-                            _leftNeighbor = true;
-                        }
-                        if(R.at(k).x() == F.at(i).r.x() + F.at(i).r.width())
-                        {
-                            m -= 5;
-                            _rightNeighbor = true;
-                        }
-                    }
-                }
-                if(_leftNeighbor || _rightNeighbor == false)
-                {
-                    if(F.at(i).r.x() + F.at(i).r.width() == w)
-                    {
-                        m -= 1;
-                        _rightNeighbor = true;
-                    }
-                    if(F.at(i).r.x() == 0)
-                    {
-                        m -= 1;
-                        _leftNeighbor = true;
-                    }
-                }
-                break;
-            case ImagePacker::BAF:
-                m += F.at(i).r.width() * F.at(i).r.height();
-                break;
-            case ImagePacker::BSSF:
-                m += qMin(F.at(i).r.width() - img.width(), F.at(i).r.height() - img.height());
-                break;
-            case ImagePacker::BLSF:
-                m += qMax(F.at(i).r.width() - img.width(), F.at(i).r.height() - img.height());
-                break;
-            case ImagePacker::MINW:
-                m += F.at(i).r.width();
-                break;
-            case ImagePacker::MINH:
-                m += F.at(i).r.height();
-            }
-            if(m < min)
-            {
-                min = m;
-                mini = i;
-                leftNeighbor = _leftNeighbor;
-                rightNeighbor = _rightNeighbor;
-                bestIsRotated = rotated;
-            }
-            if(rotated)
-            {
-                img.transpose();
-            }
-        }
+           }
+
+            if(rotated || rotation == 0) break;
+			rotated = true;
+			img.transpose();
+		}
+
+		if(rotated)
+		{
+			img.transpose();
+		}
     }
+
+    if(mini < 0)
+		return QPoint(-1, -1);
+
     if(bestIsRotated)
     {
         img.transpose();
         input->rotated = !input->rotated;
         input->sizeCurrent.transpose();
     }
-    if(mini >= 0)
-    {
-        i = mini;
-        MaxRectsNode n0;
-        QRect buf(F.at(i).r.x(), F.at(i).r.y(), img.width(), img.height());
-        if(heuristic == ImagePacker::TL)
-        {
-            if(!leftNeighbor && F.at(i).r.x() != 0 &&
-                    F.at(i).r.width() + F.at(i).r.x() == w)
-            {
-                buf = QRect(w - img.width(), F.at(i).r.y(), img.width(), img.height());
-            }
-            if(!leftNeighbor && rightNeighbor)
-            {
-                buf = QRect(F.at(i).r.x() + F.at(i).r.width() - img.width(), F.at(i).r.y(),
-                            img.width(), img.height());
-            }
-        }
-        n0.r = buf;
-        R << buf;
-        if(F.at(i).r.width() > img.width())
-        {
-            MaxRectsNode n;
-            n.r = QRect(F.at(i).r.x() + (buf.x() == F.at(i).r.x() ? img.width() : 0),
-                        F.at(i).r.y(), F.at(i).r.width() - img.width(), F.at(i).r.height());
-            //            n.i = NULL;
-            F << n;
-        }
-        if(F.at(i).r.height() > img.height())
-        {
-            MaxRectsNode n;
-            n.r = QRect(F.at(i).r.x(), F.at(i).r.y() + img.height(), F.at(i).r.width(),
-                        F.at(i).r.height() - img.height());
-            //            n.i = NULL;
-            F << n;
-        }
 
-        F.removeAt(i);
-        //intersect
-        for(i = 0; i < F.size(); i++)
-        {
-            if(F.at(i).r.intersects(n0.r))
-            {
-                if(n0.r.x() + n0.r.width() < F.at(i).r.x() + F.at(i).r.width())
-                {
-                    MaxRectsNode n;
-                    n.r = QRect(n0.r.width() + n0.r.x(), F.at(i).r.y(),
-                                F.at(i).r.width() + F.at(i).r.x() - n0.r.width() - n0.r.x(),
-                                F.at(i).r.height());
-                    //                    n.i = NULL;
-                    F << n;
-                }
-                if(n0.r.y() + n0.r.height() < F.at(i).r.y() + F.at(i).r.height())
-                {
-                    MaxRectsNode n;
-                    n.r = QRect(F.at(i).r.x(), n0.r.height() + n0.r.y(),
-                                F.at(i).r.width(), F.at(i).r.height() + F.at(i).r.y() - n0.r.height() -
-                                n0.r.y());
-                    //                    n.i = NULL;
-                    F << n;
-                }
-                if(n0.r.x() > F.at(i).r.x())
-                {
-                    MaxRectsNode n;
-                    n.r = QRect(F.at(i).r.x(), F.at(i).r.y(), n0.r.x() - F.at(i).r.x(),
-                                F.at(i).r.height());
-                    //                    n.i = NULL;
-                    F << n;
-                }
-                if(n0.r.y() > F.at(i).r.y())
-                {
-                    MaxRectsNode n;
-                    n.r = QRect(F.at(i).r.x(), F.at(i).r.y(), F.at(i).r.width(),
-                                n0.r.y() - F.at(i).r.y());
-                    //                    n.i = NULL;
-                    F << n;
-                }
-                F.removeAt(i);
-                i--;
-            }
-        }
+    QRect buf(F[mini].topLeft(), img);
 
-        for(i = 0; i < F.size(); i++)
-        {
-            for(int j = i + 1; j < F.size(); j++)
-            {
-                if(i != j  && F.at(i).r.contains(F.at(j).r))
-                {
-                    F.removeAt(j);
-                    j--;
-                }
-            }
-        }
-
-		return QPoint(n0.r.x(), n0.r.y());
+// this was in the original source code by github.com/scriptum
+// i really have no idea what it does.
+	if(heuristic == TL)
+	{
+		if(!leftNeighbor && F[mini].x() != 0 &&
+				F[mini].width() + F[mini].x() == w)
+		{
+			buf = QRect(w - img.width(), F[mini].y(), img.width(), img.height());
+		}
+		if(!leftNeighbor && rightNeighbor)
+		{
+			buf = QRect(F[mini].x() + F[mini].width() - img.width(), F[mini].y(),
+						img.width(), img.height());
+		}
     }
-    return QPoint(999999, 999999);
+
+    R.push_back(buf);
+
+    CutIntersectingRects(F, buf, padding);
+
+	return QPoint(buf.x(), buf.y());
+}
+
+void MaxRects::CutIntersectingRects(std::vector<QRect> &list, QRect buf, int padding)
+{
+ //add padding to buf (can't do this beforehand)
+    if(padding)
+        buf = QRect(buf.x()-padding, buf.y()-padding, buf.width()+padding*2, buf.height()+padding*2);
+
+    for(int i = 0; i < list.size(); i++)
+	{
+        QRect itr = list[i];
+
+		if(!itr.intersects(buf))
+			continue;
+
+        list.erase(list.begin()+i); --i;
+
+		if(buf.x() + buf.width() < itr.x() + itr.width())
+        {
+            AddRect(list,
+                QRect(buf.width() + buf.x(),
+                      itr.y(),
+                      itr.width() + itr.x() - buf.width() - buf.x(),
+                      itr.height()));
+		}
+		if(buf.y() + buf.height() < itr.y() + itr.height())
+        {
+            AddRect(list,
+               QRect(itr.x(),
+                     buf.height() + buf.y(),
+                     itr.width(),
+                     itr.height() + itr.y() - buf.height() - buf.y()));
+		}
+		if(buf.x() > itr.x())
+        {
+            AddRect(list,
+               QRect(itr.x(),
+                     itr.y(),
+                     buf.x() - itr.x(),
+                     itr.height()));
+		}
+		if(buf.y() > itr.y())
+		{
+            AddRect(list,
+              QRect(itr.x(),
+                    itr.y(),
+                    itr.width(),
+                    buf.y() - itr.y()));
+		}
+    }
+}
+
+
+void MaxRects::AddRect(std::vector<QRect> & list, QRect rect)
+{
+//r = read, w = write
+    int r,w;
+
+    for(r=w=0; r < list.size(); ++r)
+    {
+        if(list[r].contains(rect))
+        {
+              assert(r == w);
+              return;
+        }
+
+    // fundmentally, the issue is that we don't want to remove anything;
+    // each removal is an O(N) operation in a vector.
+    // so we want to shuffle everything along at once, then cut off the tail.
+        if(!rect.contains(list[r]))
+        {
+            if(w != r) list[w] = list[r];
+            ++w;
+        }
+	}
+
+//shouldn't dealloc memory, just reduce the end ptr.
+    list.resize(w);
+    list.push_back(rect);
+}
+
+
+int64_t MaxRects::sumArea(std::vector<QRect> &list)
+{
+    int64_t area = 0;
+    for(int i = 0; i < list.size(); ++i)
+        area += list[i].width() * list[i].height();
+
+    return area;
 }

@@ -14,60 +14,70 @@
 #include <QDropEvent>
 #include <QUrl>
 #include <QDrag>
+#include <QLabel>
 #include "imagepacker.h"
-
-extern QStringList imageExtensions;
 
 namespace Ui
 {
     class MainWindow;
 }
 
+class QShortcut;
+class SettingsPanel;
+class View;
+
+
+
 class MainWindow : public QMainWindow
 {
+friend class SettingsPanel;
         Q_OBJECT
 
     public:
-		static void drawCorner(QPainter & p, QColor c, const QRect & target);
-		static void drawImage(QPainter & p, QImage & img, QPoint pos, const QRect & crop, ImagePacker & packer);
         explicit MainWindow(QWidget *parent = 0);
         ~MainWindow();
 
+		QShortcut * m_delete;
+		QString outDir;
+		QString outFile;
+		QString outFormat;
+        QString imgFormat;
+
+        void setZoomText(float);
+        bool selectTiles(int texture, QRect rect, Qt::KeyboardModifiers	 keys);
+        void packerRepaint();
+
     private:
+		void onSave();
+        void displayStatus(const QList<QImage> & textures);
+
+		View   * m_view;
+		QLabel * m_status;
+		QLabel * m_scale;
+
         Ui::MainWindow *ui;
+		SettingsPanel * prefs;
+
         void RecurseDirectory(const QString &dir);
         QString topImageDir;
         ImagePacker packer;
-        QList<packedImage> packedImageList;
         bool exporting;
         int recursiveLoaderCounter;
         bool recursiveLoaderDone;
         QPixmap pattern;
         void addDir(QString dir);
-        struct packerData
-        {
-            QListWidgetItem *listItem;
-            QString path;
-        };
 
     protected:
         void dropEvent(QDropEvent *event);
         void dragEnterEvent(QDragEnterEvent *event);
-    signals:
-        void renderedImage(const QList<QImage> &image);
+
     public slots:
         void addTiles();
         void deleteSelectedTiles();
         void packerUpdate();
         void updateAuto();
-        void setTextureSize2048();
-        void setTextureSize256();
-        void setTextureSize512();
-        void setTextureSize1024();
         void updateAplhaThreshold();
-        void getFolder();
         void exportImage();
-        void swapSizes();
         void clearTiles();
 };
 
