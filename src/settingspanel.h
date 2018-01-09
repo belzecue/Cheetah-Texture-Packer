@@ -27,6 +27,10 @@ typedef void (QComboBox::*QComboBoxChanged)(int);
 typedef void (QSpinBox::*QSpinBoxChanged)(int);
 typedef void (QDoubleSpinBox::*QDoubleSpinBoxChanged)(double);
 
+/* There is a good reason that it is done this way rather than with setHidden, having
+ * to do with some bugs in Qt on ubuntu...
+ */
+
 class SettingsPanel : public QObject
 {
 	Q_OBJECT
