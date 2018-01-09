@@ -49,7 +49,7 @@ QRect ImagePacker::crop(const QImage &img)
 			if(!t) break;
 		}
 		t = true;
-		for(w = img.width(); t && w > 0; w--)
+		for(w = img.width(); w > 0; w--)
 		{
 			for(j = y; j < img.height(); j++)
 			{
@@ -60,7 +60,7 @@ QRect ImagePacker::crop(const QImage &img)
 			if(!t) break;
 		}
 		t = true;
-		for(h = img.height(); t && h > 0; h--)
+		for(h = img.height(); h > 0; h--)
 		{
 			for(j = x; j < w; j++)
 			{
@@ -98,7 +98,7 @@ QRect ImagePacker::crop(const QImage &img)
 			if(!t) break;
 		}
 		t = true;
-		for(w = img.width(); t && w > 0; w--)
+		for(w = img.width(); w > 0; w--)
 		{
 			for(j = y; j < img.height(); j++)
 			{
@@ -109,7 +109,7 @@ QRect ImagePacker::crop(const QImage &img)
 			if(!t) break;
 		}
 		t = true;
-		for(h = img.height(); t && h > 0; h--)
+		for(h = img.height(); h > 0; h--)
 		{
 			for(j = x; j < w; j++)
 			{
@@ -124,7 +124,7 @@ QRect ImagePacker::crop(const QImage &img)
     if(w < x) w = x;
     if(h < y) h = y;
 
-    return QRect(x, y, w-x, h-x);
+    return QRect(x, y, w-x, h-y);
 }
 void ImagePacker::applyGreenScreen(QImage & image)
 {
