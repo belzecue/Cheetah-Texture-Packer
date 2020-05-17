@@ -1,6 +1,6 @@
 #ifndef QCONSTRAINEDSPINBOX_H
 #define QCONSTRAINEDSPINBOX_H
-#include "preferences/sizeconstraintsettings.h"
+#include "src/preferences.h"
 #include <QSpinBox>
 
 class QConstrainedSpinBox : public QSpinBox
@@ -17,17 +17,17 @@ public:
     void setConstraint(int c)
     {
         m_constraint = c;
-        setValue(g_roundConstrainedValue(c, value()));
+        setValue(Preferences::RoundConstrainedValue(c, value()));
     }
 
     void stepBy(int step) override
     {
-        QSpinBox::stepBy(g_stepConstrainedValue(m_constraint, value(), step));
+        QSpinBox::stepBy(Preferences::StepConstrainedValue(m_constraint, value(), step));
     }
 
     int valueFromText(const QString &text) const override
     {
-        return g_roundConstrainedValue(m_constraint, text.toUInt());
+        return Preferences::RoundConstrainedValue(m_constraint, text.toUInt());
     }
 
 };

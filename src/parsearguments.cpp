@@ -1,5 +1,6 @@
 #include "parsearguments.h"
 #include "support.h"
+#include "packersettings.h"
 #include <cstring>
 
 #define Token(tok, text) {tok, sizeof(text)-1, text}
@@ -46,14 +47,12 @@ TokId_t getToken(const char * string)
 #include <QDir>
 
 Arguments::Arguments() :
-	textureWidth(512),
-	textureHeight(512),
-	outDir(QDir::currentPath()),
+	outDir(QDir::currentPath().toStdString()),
 	outFile("atlas")
 {
 }
 
-Arguments::Arguments(int argc, char * argv[], ImagePacker & packer) :
+Arguments::Arguments(int argc, char * argv[], PackerSettings & packer) :
 	Arguments()
 {
 	bool merge = true;
@@ -69,6 +68,8 @@ Arguments::Arguments(int argc, char * argv[], ImagePacker & packer) :
 	int minTextureSizeX = 32;
 	int minTextureSizeY = 32;
 	int sortorder = 4;
+	int textureWidth = 512;
+	int textureHeight = 512;
 
 	for(int i = 1; i < argc; ++i)
 	{
@@ -107,8 +108,8 @@ Arguments::Arguments(int argc, char * argv[], ImagePacker & packer) :
 				printHelp("Argument needed for option -o");
 			}
 			QFileInfo info(argv[i]);
-			outFile = info.baseName();
-			outDir = info.absolutePath();
+			outFile = info.baseName().toStdString();
+			outDir = info.absolutePath().toStdString();
 		} break;
 		case arg_disableMerge:    merge = false; break;
 		case arg_disableCrop:     crop  = false; break;
@@ -203,7 +204,7 @@ Arguments::Arguments(int argc, char * argv[], ImagePacker & packer) :
 			}
 		} break;
 		default:
-			QFileInfo file(argv[i]);
+		/*	QFileInfo file(argv[i]);
 			if(file.isFile())
 			{
 				packerData *data = new packerData();
@@ -215,22 +216,22 @@ Arguments::Arguments(int argc, char * argv[], ImagePacker & packer) :
 				if(file.isDir())
 				{
 					RecurseDirectory(packer, file.absoluteFilePath(), file.absoluteFilePath(), recursion);
-				}
+				}*/
 			break;
 		};
 	}
 
-	packer.sortOrder = (Sort_t) sortorder;
+	packer.rotate = (Preferences::Rotation) rotate;
+	packer.sortOrder = (Preferences::Sort) sortorder;
 	packer.border = border;
     packer.padding = 0;
 	packer.extrude = extrude;
 	packer.cropThreshold = crop ? cropThreshold : 0;
 	packer.minFillRate = autosize ? autosizeThreshold : 0;
-	packer.minTextureSizeX = minTextureSizeX;
-	packer.minTextureSizeY = minTextureSizeY;
+	packer.minSize = glm::u16vec2(minTextureSizeX, minTextureSizeY);
+	packer.maxSize = glm::u16vec2(textureWidth, textureHeight);
 	packer.merge = merge;
 	packer.mergeBF = false;
-	packer.rotate = (Rotation_t) rotate;
 	packer.square = square;
 	packer.autosize = autosize;
 }

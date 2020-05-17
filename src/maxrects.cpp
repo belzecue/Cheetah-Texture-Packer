@@ -1,35 +1,36 @@
 #include "maxrects.h"
+#include "imagemetadata.h"
+#include "lf_math.h"
 #include <iostream>
 #include <climits>
 #include <cassert>
 
-MaxRects::MaxRects(int w, int h, int border, QPoint align) :
-	w(w),
-	h(h),
+MaxRects::MaxRects(glm::ivec2 size, int border, glm::ivec2 align) :
+	size(size),
 	alignment(align)
 {
-    F.push_back(QRect(border, border, w-border*2, h-border*2));
+    F.push_back(glm::ivec4(border, border, size.x-border*2, size.y-border*2));
 }
 
-QPoint MaxRects::insertNode(inputImage *input)
+glm::ivec2 MaxRects::insertNode(ImageMetadata & input)
 {
     int min = INT_MAX, mini = -1;
-    QSize img = input->sizeCurrent;
+    glm::ivec2 img = input.currentSize;
 
     //    if(img.width() == w) img.setWidth(img.width() - border->l - border->r);
     //    if(img.height() == h) img.setHeight(img.height() - border->t - border->b);
-    if(img.width() <= 1 || img.height() <= 1)
+    if(img.x <= 1 || img.y <= 1)
     {
-        return QPoint(-1, -1);
+        return glm::ivec2(-1, -1);
     }
 
     bool leftNeighbor = false, rightNeighbor = false;
     bool _leftNeighbor = false, _rightNeighbor = false;
     bool bestIsRotated = false;
 
-    for(int i = 0; i < F.size(); i++)
+    for(uint32_t i = 0; i < F.size(); i++)
     {
-        QRect itr = F[i];
+        glm::ivec4 itr = F[i];
 
 //check each image with and without rotation
 		bool rotated = false;
@@ -37,9 +38,9 @@ QPoint MaxRects::insertNode(inputImage *input)
 		for(;;)
 		{
             //can we fit in this hole?
-            if(itr.width() >= img.width() && itr.height() >= img.height())
+            if(itr.z - itr.x >= img.x && itr.w - itr.y >= img.y)
             {
-                const int m = calculateHeuristic(itr, img, _leftNeighbor, _rightNeighbor);
+                const int m = CalculateHeuristic(itr, img, _leftNeighbor, _rightNeighbor);
 
                 if(m < min)
                 {
@@ -51,42 +52,40 @@ QPoint MaxRects::insertNode(inputImage *input)
                 }
            }
 
-            if(rotated || rotation == 0) break;
+            if(rotated || rotation == Preferences::Rotation::Never) break;
 			rotated = true;
-			img.transpose();
+			std::swap(img.x, img.y);
 		}
 
 		if(rotated)
 		{
-			img.transpose();
+			std::swap(img.x, img.y);
 		}
     }
 
     if(mini < 0)
-		return QPoint(-1, -1);
+		return glm::ivec2(-1, -1);
 
     if(bestIsRotated)
     {
-        img.transpose();
-        input->rotated = !input->rotated;
-        input->sizeCurrent.transpose();
+		std::swap(img.x, img.y);
+		std::swap(input.currentSize.x, input.currentSize.y);
+        input.rotated = !input.rotated;
     }
 
-    QRect buf(F[mini].topLeft(), img);
+    glm::ivec4 buf(F[mini].x, F[mini].y, F[mini].x + img.x, F[mini].y + img.y);
 
 // this was in the original source code by github.com/scriptum
 // i really have no idea what it does.
-	if(heuristic == TL)
+	if(heuristic == Preferences::Heuristic::TopLeft)
 	{
-		if(!leftNeighbor && F[mini].x() != 0 &&
-				F[mini].width() + F[mini].x() == w)
+		if(!leftNeighbor && F[mini].x != 0 && F[mini].z == size.x)
 		{
-			buf = QRect(w - img.width(), F[mini].y(), img.width(), img.height());
+			buf = glm::ivec4(size.x - img.x, F[mini].y, img.x, img.y);
 		}
 		if(!leftNeighbor && rightNeighbor)
 		{
-			buf = QRect(F[mini].x() + F[mini].width() - img.width(), F[mini].y(),
-						img.width(), img.height());
+			buf = glm::ivec4(F[mini].z - img.x, F[mini].y, img.x, img.y);
 		}
     }
 
@@ -94,68 +93,48 @@ QPoint MaxRects::insertNode(inputImage *input)
 
     CutIntersectingRects(F, buf, padding);
 
-	return QPoint(buf.x(), buf.y());
+	return glm::ivec2(buf.x, buf.y);
 }
 
-void MaxRects::CutIntersectingRects(std::vector<QRect> &list, QRect buf, int padding)
+void MaxRects::CutIntersectingRects(std::vector<glm::ivec4> &list, glm::ivec4 buf, int padding)
 {
  //add padding to buf (can't do this beforehand)
     if(padding)
-        buf = QRect(buf.x()-padding, buf.y()-padding, buf.width()+padding*2, buf.height()+padding*2);
+        buf = glm::ivec4(buf.x-padding, buf.y-padding, buf.z+padding, buf.w+padding);
 
-    for(int i = 0; i < list.size(); i++)
+    for(uint32_t i = 0; i < list.size(); i++)
 	{
-        QRect itr = list[i];
+        glm::ivec4 itr = list[i];
 
-		if(!itr.intersects(buf))
+		if(!math::intersects(itr, buf))
 			continue;
 
         list.erase(list.begin()+i); --i;
 
-		if(buf.x() + buf.width() < itr.x() + itr.width())
-        {
+		if(buf.z < itr.z)
+            AddRect(list, glm::ivec4(buf.z, itr.y, itr.z, itr.w));
+
+		if(buf.w < itr.w)
             AddRect(list,
-                QRect(buf.width() + buf.x(),
-                      itr.y(),
-                      itr.width() + itr.x() - buf.width() - buf.x(),
-                      itr.height()));
-		}
-		if(buf.y() + buf.height() < itr.y() + itr.height())
-        {
-            AddRect(list,
-               QRect(itr.x(),
-                     buf.height() + buf.y(),
-                     itr.width(),
-                     itr.height() + itr.y() - buf.height() - buf.y()));
-		}
-		if(buf.x() > itr.x())
-        {
-            AddRect(list,
-               QRect(itr.x(),
-                     itr.y(),
-                     buf.x() - itr.x(),
-                     itr.height()));
-		}
-		if(buf.y() > itr.y())
-		{
-            AddRect(list,
-              QRect(itr.x(),
-                    itr.y(),
-                    itr.width(),
-                    buf.y() - itr.y()));
-		}
+               glm::ivec4(itr.x, buf.w, itr.z, itr.w));
+
+		if(buf.x > itr.x)
+            AddRect(list, glm::ivec4(itr.x, itr.y, buf.x, itr.w));
+
+		if(buf.y > itr.y)
+            AddRect(list, glm::ivec4(itr.x, itr.y, itr.z, buf.y));
     }
 }
 
 
-void MaxRects::AddRect(std::vector<QRect> & list, QRect rect)
+void MaxRects::AddRect(std::vector<glm::ivec4> & list, glm::ivec4 rect)
 {
 //r = read, w = write
-    int r,w;
+    uint32_t r,w;
 
     for(r=w=0; r < list.size(); ++r)
     {
-        if(list[r].contains(rect))
+        if(math::contains(list[r], rect))
         {
               assert(r == w);
               return;
@@ -164,7 +143,7 @@ void MaxRects::AddRect(std::vector<QRect> & list, QRect rect)
     // fundmentally, the issue is that we don't want to remove anything;
     // each removal is an O(N) operation in a vector.
     // so we want to shuffle everything along at once, then cut off the tail.
-        if(!rect.contains(list[r]))
+        if(!math::contains(rect, list[r]))
         {
             if(w != r) list[w] = list[r];
             ++w;
@@ -177,11 +156,11 @@ void MaxRects::AddRect(std::vector<QRect> & list, QRect rect)
 }
 
 
-int64_t MaxRects::sumArea(std::vector<QRect> &list)
+int64_t MaxRects::sumArea(std::vector<glm::ivec4> &list)
 {
     int64_t area = 0;
-    for(int i = 0; i < list.size(); ++i)
-        area += list[i].width() * list[i].height();
+    for(uint32_t i = 0; i < list.size(); ++i)
+        area += (list[i].z - list[i].x)* (list[i].w - list[i].y);
 
     return area;
 }

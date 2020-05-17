@@ -28,9 +28,10 @@ bool ChangeDir(QWidget * parent, const QString & outDir)
 	return false;
 }
 
-bool WriteAtlas(QWidget * parent, const QList<QImage> & textures, const ImagePacker & packer, const QString & outDir, const QString & outFile, QString outFormat)
+bool WriteAtlas(QWidget * parent, const QList<QImage> & textures, const ImagePacker & packer, const QString & outDir, const QString & outFile, QString outFormat, QString imgFormat)
 {
 	QString outputFile;
+	QString imageFile;
 	if(!ChangeDir(parent, outDir)) return false;
 	outFormat = outFormat.toLower();
 
@@ -38,11 +39,13 @@ bool WriteAtlas(QWidget * parent, const QList<QImage> & textures, const ImagePac
 	{
 		if(textures.count() > 1)
 		{
+			imageFile  =  QString("%1-%2.%3").arg(outFile).arg(j+1).arg(imgFormat);
             outputFile =  QString("%1-%2.atlas.%3").arg(outFile).arg(j + 1).arg(outFormat);
 		}
 		else
 		{
-            outputFile =  QString("%1.atlas.%3").arg(outFile).arg(outFormat);
+			imageFile  =  QString("%1.%2").arg(outFile).arg(imgFormat);
+            outputFile =  QString("%1.atlas.%2").arg(outFile).arg(outFormat);
 		}
 
 		QFile positionsFile(outputFile);
@@ -54,7 +57,7 @@ bool WriteAtlas(QWidget * parent, const QList<QImage> & textures, const ImagePac
 		else
 		{
 			QTextStream out(&positionsFile);
-			packer.WriteAtlasFile(j, out, outputFile);
+		//	packer.WriteAtlasFile(j, out, imageFile);
 		}
 	}
 
@@ -161,10 +164,10 @@ void RecurseDirectory(ImagePacker & packer, const QString & topDir, const QStrin
             {
                 if(!QFile::exists(name + info.completeBaseName() + QString(".atlas")))
                 {
-                    packerData *data = new packerData();
+ /*                   packerData *data = new packerData();
                     data->path = info.absoluteFilePath();
                     data->file = info.fileName();
-                    packer.addItem(data->path, data);
+                    packer.addItem(data->path, data);*/
                 }
             }
     }

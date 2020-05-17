@@ -1,11 +1,11 @@
 #ifndef PARSEARGUMENTS_H
 #define PARSEARGUMENTS_H
-#include "imagepacker.h"
-#include <QString>
+#include <string>
 
 class MainWindow;
+class PackerSettings;
 
-typedef enum TokId_t
+enum TokId_t : char
 {
 	arg_help,
 	arg_size,
@@ -23,7 +23,7 @@ typedef enum TokId_t
 	arg_minTextureSize,
 	arg_sortOrder,
 	arg_badToken = -1
-} TokId_t;
+};
 
 struct TokenType
 {
@@ -35,12 +35,10 @@ struct TokenType
 struct Arguments
 {
 	Arguments();
-	Arguments(int argc, char * argv[], ImagePacker & packer);
+	Arguments(int argc, char * argv[], PackerSettings & packer);
 
-	int textureWidth;
-	int textureHeight;
-	QString outDir;
-	QString outFile;
+	std::string outDir;
+	std::string outFile;
 };
 
 TokId_t getToken(const char * string);

@@ -12,7 +12,7 @@ class QFileInfo;
 extern QStringList g_extensions;
 
 bool ChangeDir(QWidget * parent, const QString & outDir);
-bool WriteAtlas(QWidget * parent, const QList<QImage> & textures, const ImagePacker & packer, const QString & outDir, const QString & outFile, QString outFormat);
+bool WriteAtlas(QWidget * parent, const QList<QImage> & textures, const ImagePacker & packer, const QString & outDir, const QString & outFile, QString outFormat, QString imgFormat);
 bool ExportImages(QWidget * parent, const QList<QImage> & textures, const QString & outDir, const QString & outFile, const QString & outFormat);
 void WriteError(QWidget * parent, const QString & string);
 quint64 CalculateTotalArea(const QList<QImage> & textures);

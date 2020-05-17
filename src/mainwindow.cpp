@@ -1,7 +1,10 @@
 #include "mainwindow.h"
+#include "document.h"
 #include "ui_mainwindow.h"
 #include "settingspanel.h"
+#include "packersettings.h"
 #include "widgets/view.h"
+#include "widgets/spritemodel.h"
 #include "support.h"
 #include <QFileDialog>
 #include <QMessageBox>
@@ -31,12 +34,39 @@ MainWindow::MainWindow(QWidget *parent) :
 
     exporting = false;
     ui->setupUi(this);
+	ui->viewWidget->w = this;
 
 	prefs = new SettingsPanel(*this);
 
     m_view = new View(*this);
-	ui->scrollArea->setWidget(m_view);
-	ui->scrollArea->setAutoFillBackground(false);
+
+	document.reset(new Document(ui->viewWidget));
+	document->window = this;
+
+//configure tree
+	model.reset(new SpriteModel(this));
+	model->window = this;
+
+	ui->treeView->setModel(model.get());
+	ui->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(ui->treeView, &QTreeView::customContextMenuRequested, this, [this](const QPoint & point)
+	{
+		QModelIndex index = ui->treeView->indexAt(point);
+		if(index.isValid())
+		{
+			model->onCustomContextMenu(index, ui->treeView->viewport()->mapToGlobal(point));
+		}
+	});
+
+	connect(ui->treeView, &QTreeView::doubleClicked, model.get(), &SpriteModel::doubleClicked);
+	connect(ui->treeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this](auto const& selected, auto const& )
+	{
+		if(selected.indexes().size())
+			model->activated(selected.indexes().first());
+	});
+
+//	ui->scrollArea->setWidget(m_view);
+//	ui->scrollArea->setAutoFillBackground(false);
 
 	outDir = QDir::homePath();
 
@@ -61,6 +91,9 @@ MainWindow::MainWindow(QWidget *parent) :
     painter.fillRect(0, 10, 10, 10, QColor(BRIGHT, BRIGHT, BRIGHT));
 
     setAcceptDrops(true);
+
+	connect(ui->editUndo,  &QAction::triggered,  this, [this]() { document->editUndo(); });
+	connect(ui->editRedo,  &QAction::triggered,  this, [this]() { document->editRedo(); });
 
 //	QComboBoxChanged qComboBoxChanged = &QComboBox::currentIndexChanged;
 //connnect things state set to ensure auto update doesn't go off.
@@ -94,18 +127,19 @@ MainWindow::MainWindow(QWidget *parent) :
 	*/
 
 
-    connect(ui->m_close,   &QAction::triggered, this, &MainWindow::clearTiles);
+    connect(ui->fileClose,   &QAction::triggered, this, &MainWindow::clearTiles);
+	/*
     connect(ui->m_zoom25,  &QAction::triggered, [this]() {  m_view->changeZoom(.25); } );
     connect(ui->m_zoom50,  &QAction::triggered, [this]() {  m_view->changeZoom(.50); } );
     connect(ui->m_zoom100, &QAction::triggered, [this]() {  m_view->changeZoom(1.0); } );
     connect(ui->m_zoom200, &QAction::triggered, [this]() {  m_view->changeZoom(2.0); } );
     connect(ui->m_zoom400, &QAction::triggered, [this]() {  m_view->changeZoom(4.0); } );
-    connect(ui->m_zoom800, &QAction::triggered, [this]() {  m_view->changeZoom(8.0); } );
+    connect(ui->m_zoom800, &QAction::triggered, [this]() {  m_view->changeZoom(8.0); } );*/
 
-    connect(ui->m_zoomIn , &QAction::triggered, [this]() { m_view->zoomIn(); } );
-    connect(ui->m_zoomOut, &QAction::triggered, [this]() { m_view->zoomOut();  } );
+    connect(ui->zoomIn , &QAction::triggered, [this]() { m_view->zoomIn(); } );
+    connect(ui->zoomOut, &QAction::triggered, [this]() { m_view->zoomOut();  } );
 
-	connect(ui->tilesList, &QListWidget::itemSelectionChanged, this, &MainWindow::packerRepaint);
+//	connect(ui->tilesList, &QListWidget::itemSelectionChanged, this, &MainWindow::packerRepaint);
 
 
 	connect(m_delete, &QShortcut::activated, this, &MainWindow::deleteSelectedTiles);
@@ -121,14 +155,14 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(ui->b_clearTiles, SIGNAL(clicked()), MainWindow, SLOT(clearTiles()));
 	connect(ui->s_alphaThreshold, &QSpinBox::valueChanged, MainWindow, SLOT(updateAplhaThreshold()));
 */
-	connect(ui->m_new, &QAction::triggered, [this]()
+	connect(ui->fileNew, &QAction::triggered, []()
 	{
 		MainWindow * window = new MainWindow();
 		window->show();
 	});
 
-	connect(ui->m_open, &QAction::triggered, this, &MainWindow::addTiles);
-	connect(ui->m_export, &QAction::triggered, this, &MainWindow::onSave);
+	connect(ui->fileOpen, &QAction::triggered, this, &MainWindow::addTiles);
+	connect(ui->fileSave, &QAction::triggered, this, &MainWindow::onSave);
 	connect(ui->m_about, &QAction::triggered, [this]() {
 		QMessageBox::information(this, QString("About %1").arg(windowTitle()),
 		"Original by github.com/scriptum\nUpdated by github.com/pdjeeves\nUsed code by Hyllian - sergiogdb@gmail.com");
@@ -175,12 +209,13 @@ void MainWindow::RecurseDirectory(const QString &dir)
             {
                 if(!QFile::exists(name + info.completeBaseName() + QString(".atlas")))
                 {
+					/*
                     ui->tilesList->addItem(filePath.replace(topImageDir, ""));
                     packerData *data = new packerData();
                     data->listItem = ui->tilesList->item(ui->tilesList->count() - 1);
 					data->file = info.fileName();
                     data->path = info.absoluteFilePath();
-                    packer.addItem(data->path, data);
+                    packer.addItem(data->path, data);*/
                 }
             }
         if(recursiveLoaderCounter == 500)
@@ -246,8 +281,54 @@ void MainWindow::addTiles()
     }
 }
 
+void MainWindow::OnDocumentChanged()
+{
+	model->layoutChanged();
+	ui->viewWidget->need_repaint(false);
+}
+
+void MainWindow::DisplayError(std::string const& what)
+{
+	QMessageBox::warning(this, "Cheetah Error", what.c_str());
+}
+
+#include <QImageReader>
+#include <QStandardPaths>
+
+extern const char * g_ReadMimeTypes[];
+extern const char * g_WriteMimeTypes[];
+
+static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode)
+{
+	QStringList mimeTypeFilters;
+
+	for(const char ** p = acceptMode == QFileDialog::AcceptOpen
+		? g_ReadMimeTypes : g_WriteMimeTypes; **p == '\0'; ++p)
+		mimeTypeFilters << *p;
+
+	dialog.setDirectory("/media/anyuser/SHAREDFILES/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+    dialog.setMimeTypeFilters(mimeTypeFilters);
+    dialog.selectMimeTypeFilter("image/bmp");
+    if (acceptMode == QFileDialog::AcceptSave)
+        dialog.setDefaultSuffix("bmp");
+}
+
+std::string MainWindow::GetImage()
+{
+	QFileDialog dialog(this, tr("Open File"));
+    initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
+
+    if(dialog.exec() == QDialog::Accepted)
+	{
+		return dialog.selectedFiles().first().toStdString();
+	}
+
+	return std::string();
+}
+
 bool MainWindow::selectTiles(int texture, QRect rect, Qt::KeyboardModifiers keys)
 {
+	/*
     bool selectionChanged = false;
 
     if(!(keys & Qt::ShiftModifier
@@ -257,7 +338,7 @@ bool MainWindow::selectTiles(int texture, QRect rect, Qt::KeyboardModifiers keys
         selectionChanged =  true;
     }
 
-    for(int i = 0; i < packer.images.size(); ++i)
+    for(uint32_t i = 0; i < packer.images.size(); ++i)
     {
         if((packer.images[i].duplicateId != NULL && packer.merge)
         ||  packer.images[i].textureId   != texture)
@@ -281,11 +362,13 @@ bool MainWindow::selectTiles(int texture, QRect rect, Qt::KeyboardModifiers keys
     }
 
     return selectionChanged;
+	*/
+	return false;
 }
 
 
 void MainWindow::deleteSelectedTiles()
-{
+{/*
     for(int j = 0; j < packer.images.size(); ++j)
     {
         if(packer.images.at(j).id->listItem
@@ -299,37 +382,37 @@ void MainWindow::deleteSelectedTiles()
 
     qDeleteAll(ui->tilesList->selectedItems());
 	updateAuto();
+	*/
 }
 
-void MainWindow::displayStatus(const QList<QImage> & textures)
+void MainWindow::displayStatus(quint64 image_area, quint64 packer_area, quint64 neededArea, int missingImages, int mergedImages)
 {
-	quint64 area = CalculateTotalArea(textures);
-
 	QString message;
-	if(area)
+
+	if(image_area)
 	{
-		float percent = (((float)packer.area / (float)area) * 100.0f);
-		float percent2 = (float)(((float)packer.neededArea / (float)area) * 100.0f);
+		float percent =  packer_area * 100.0 / (float)image_area;
+		float percent2 = neededArea  * 100.0 / (float)image_area;
 
 		QString missed;
 		QString merged;
 
-		if(packer.missingImages)
+		if(missingImages)
 		{
-			missed = tr("%1 images missed").arg(QString::number(packer.missingImages));
+			missed = tr("%1 images missed").arg(QString::number(missingImages));
 			missed = QString(", <font color=red><b>%1</b></font>").arg(missed);
 		}
 
-		if(packer.mergedImages)
+		if(mergedImages)
 		{
-			merged  = tr(", %1 images merged").arg(packer.mergedImages);
+			merged  = tr(", %1 images merged").arg(mergedImages);
 		}
 
 		message = tr("%1% filled").arg(percent)
 				+ missed
 				+ merged
 				+ tr(", needed area: %1%").arg(percent2)
-				+ tr(", KBytes %3").arg(area * 4 / 1024);
+				+ tr(", KBytes %3").arg(image_area * 4 / 1024);
 	}
 
 	m_status->setText(message);
@@ -338,40 +421,21 @@ void MainWindow::displayStatus(const QList<QImage> & textures)
 
 void MainWindow::packerUpdate()
 {
-    packer.sortOrder = prefs->sortOrder();
-    packer.border = prefs->border();
-    packer.extrude = prefs->extrude();
-    packer.padding = prefs->padding();
-    packer.merge = prefs->doMerge();
-    packer.square = prefs->keepSquare();
-    packer.autosize = prefs->autosize();
-    packer.minFillRate = prefs->minFillRate();
-    packer.mergeBF = false;
-    packer.rotate = prefs->rotation();
-
-	packer.alignment.setX( prefs->alignX());
-	packer.alignment.setY( prefs->alignY());
-
-	packer.cropThreshold      = prefs->alphaThreshold();
-	packer.greenScreen        = prefs->greenScreenColor();
-    packer.greenScreenToAlpha = prefs->greenScreenToAlpha();
-    packer.useGreenScreen     = prefs->useGreenScreen();
-
-	int textureWidth = prefs->maxWidth();
-	int textureHeight = prefs->maxHeight();
-    Heuristic_t heuristic = prefs->heuristic();
+	/*
+	PackerSettings settings;
+	prefs->GetSettings(settings);
 
 	if(packer.images.size())
 	{
-		packer.pack(heuristic, textureWidth, textureHeight);
+		packer.pack(settings);
 		packerRepaint();
-	}
+	}*/
 }
 
 
 void MainWindow::packerRepaint()
 {
-    bool previewWithImages = ui->c_previewWithImages->isChecked();
+/*    bool previewWithImages = ui->c_previewWithImages->isChecked();
 
     QList<QImage> textures;
     for(int i = 0; i < packer.bins.size(); i++)
@@ -383,7 +447,7 @@ void MainWindow::packerRepaint()
     }
     if(exporting)
     {
-        if(!WriteAtlas(0L, textures, packer, outDir, outFile, "txt"))
+        if(!WriteAtlas(0L, textures, packer, outDir, outFile, outFormat, imgFormat))
 			return;
     }
 
@@ -405,13 +469,14 @@ void MainWindow::packerRepaint()
     {
 		m_view->updatePixmap(textures);
     }
+	*/
 }
 
 void MainWindow::updateAplhaThreshold()
 {
-    packer.cropThreshold = prefs->alphaThreshold();
-    packer.UpdateCrop();
-    updateAuto();
+ //   packer.cropThreshold = prefs->alphaThreshold();
+  //  packer.UpdateCrop();
+   // updateAuto();
 }
 /*
 void MainWindow::getFolder()
@@ -433,8 +498,8 @@ void MainWindow::exportImage()
 
 void MainWindow::clearTiles()
 {
-    packer.images.clear();
-    ui->tilesList->clear();
+   // packer.images.clear();
+   // ui->tilesList->clear();
 }
 
 void MainWindow::updateAuto()
@@ -444,7 +509,7 @@ void MainWindow::updateAuto()
         packerUpdate();
     }
 }
-
+/*
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
     event->acceptProposedAction();
@@ -477,4 +542,43 @@ void MainWindow::dropEvent(QDropEvent *event)
     packerUpdate();
 
     event->acceptProposedAction();
+}*/
+
+float MainWindow::SetZoom(float zoom)
+{
+const float g_MinZoom = .125f;
+const float g_MaxZoom = 2.f;
+
+	float p_zoom = m_zoom;
+
+	m_zoom = std::max(g_MinZoom, std::min(g_MaxZoom, zoom));
+
+	ui->m_zoomIn->setEnabled(m_zoom < g_MaxZoom);
+	ui->m_zoomIn->setEnabled(m_zoom > g_MinZoom);
+
+	ui->horizontalScrollBar->setPageStep(m_zoom*64);
+	ui->verticalScrollBar->setPageStep(m_zoom*64);
+
+	ui->viewWidget->need_repaint(false);
+
+	return p_zoom / m_zoom;
+}
+
+glm::vec2  MainWindow::GetScroll()
+{
+	return glm::vec2(
+		(ui->horizontalScrollBar->value() - ui->horizontalScrollBar->minimum())
+			/ (double) (ui->horizontalScrollBar->maximum() - ui->horizontalScrollBar->minimum()),
+		 1 - (ui->verticalScrollBar->value() - ui->verticalScrollBar->minimum())
+			/ (double) (ui->verticalScrollBar->maximum() - ui->verticalScrollBar->minimum()));
+}
+
+void  MainWindow::SetScroll(glm::vec2 scroll)
+{
+	scroll = glm::max(glm::vec2(0), glm::min(scroll, glm::vec2(1)));
+	int scroll_x = glm::mix(ui->horizontalScrollBar->minimum(), ui->horizontalScrollBar->maximum(), scroll.x);
+	int scroll_y = glm::mix(ui->verticalScrollBar->minimum(), ui->verticalScrollBar->maximum(), 1 - scroll.y);
+
+	ui->horizontalScrollBar->setValue(scroll_x);
+	ui->verticalScrollBar->setValue(scroll_y);
 }

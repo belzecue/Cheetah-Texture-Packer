@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     //command-line version
     if(argc > 1)
     {
-		ImagePacker packer;
+	/*	ImagePacker packer;
 		Arguments args(argc, argv, packer);
 
 		QString & outDir  = args.outDir;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
             textures << texture;
         }
 
-        if(!WriteAtlas(0L, textures, packer, outDir, outFile, "txt"))
+        if(!WriteAtlas(0L, textures, packer, outDir, outFile, "txt", outFormat))
 			return -1;
 
 		packer.CreateOutputTextures(textures, false, true, 0L);
@@ -87,10 +87,11 @@ int main(int argc, char *argv[])
 		ExportImages(0L, textures, outDir, outFile, outFormat);
 
         return 0;
+		*/
     }
 
     QTranslator myTranslator;
-    myTranslator.load("tile_" + QLocale::system().name(), "qm");
+    myTranslator.load("cheetah_" + QLocale::system().name(), "qm");
     a.installTranslator(&myTranslator);
     MainWindow w;
     w.show();

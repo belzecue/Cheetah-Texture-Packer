@@ -1,3 +1,5 @@
+typedef int nothing;
+#if 0
 #include "rc_crc32.h"
 #include "imagepacker.h"
 #include <QDebug>
@@ -16,7 +18,7 @@ ImagePacker::ImagePacker()
 	useGreenScreen = true;
 }
 
-void ImagePacker::pack(Heuristic_t heur, int w, int h)
+void ImagePacker::pack(Preferences::Heuristic heur, int w, int h)
 {
 // alignment below 1 px limit doesn't make any sense!
 	assert(alignment.x() > 0 && alignment.y() > 0);
@@ -68,7 +70,7 @@ void ImagePacker::addItem(const QImage &img, packerData * data, QString path)
     i.hash = rc_crc32(0, img.bits(), img.byteCount());
     i.crop = crop(img);
 	i.sizeCurrent = i.crop.size();
-    i.size = img.size();
+    i.originalSize = img.size();
     i.id = data;
     i.path = path;
     images << i;
@@ -101,7 +103,7 @@ void ImagePacker::realculateDuplicates()
 
             if(k0.duplicateId == NULL &&
                     i0.hash == k0.hash &&
-                    i0.size == k0.size &&
+                    i0.originalSize == k0.originalSize &&
                     i0.crop == k0.crop)
             {
                 k0.duplicateId = &i0;
@@ -353,9 +355,9 @@ void ImagePacker::DivideLastImage(Heuristic_t heur, int w, int h, bool wh)
 float ImagePacker::GetFillRate()
 {
     quint64 binArea = 0;
-    for(int i = 0; i < bins.count(); i++)
+    for(uint32_t i = 0; i < bins.size(); i++)
     {
-        binArea += bins.at(i).width() * bins.at(i).height();
+        binArea += (bins[i].z - bins[i].x) * bins.at(i).height();
     }
     return (float)((double)area / (double)binArea);
 }
@@ -374,7 +376,7 @@ void ImagePacker::WriteAtlasFile(int j, QTextStream & out, const QString & imgFi
 			continue;
 		}
         QPoint pos(img.pos.x() + extrude, img.pos.y() + extrude);
-		QSize sizeOrig = img.size;
+		QSize sizeOrig = img.originalSize;
 		QSize size = img.getSize(cropThreshold);
 		QRect crop = img.getCrop(cropThreshold);
 
@@ -387,12 +389,14 @@ void ImagePacker::WriteAtlasFile(int j, QTextStream & out, const QString & imgFi
 		out << images[i].id->file
 			<< "\t" << pos.x()
 		    << "\t" << pos.y()
-			<< "\t" << crop.width()
-			<< "\t" << crop.height()
-			<< "\t" << crop.x()
-			<< "\t" << crop.y()
 			<< "\t" << sizeOrig.width()
 			<< "\t" << sizeOrig.height()
+
+			<< "\t" << crop.x()
+			<< "\t" << crop.y()
+			<< "\t" << crop.width()
+			<< "\t" << crop.height()
+
 			<< "\t" << (img.rotated ? "r" : "")
 			<< "\n";
 	}
@@ -609,3 +613,4 @@ void ImagePacker::drawImage(QPainter & p, QImage & img, const QRect & crop)
 }
 
 
+#endif

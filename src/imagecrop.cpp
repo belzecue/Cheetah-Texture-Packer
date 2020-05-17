@@ -1,5 +1,6 @@
 #include "imagepacker.h"
-#include <QHash>
+#include "packersettings.h"
+#include <QImage>
 
 #define CMPF1(x,y,a) (qAlpha(img.pixel(x,y)) <= a)
 #define CMPF3(x,y,a) (img.pixel(x,y) == a)
@@ -15,9 +16,9 @@
 
 //should be cached; is in the inputimage.cpp variation.
 static bool doesImageHaveAlpha(const QImage & image);
-
+#if 0
 //auto-cropping algorithm
-QRect ImagePacker::crop(const QImage &img)
+QRect crop(const QImage &img)
 {
     int j, w, h, x, y;
     //QImage im;
@@ -160,3 +161,4 @@ static bool doesImageHaveAlpha(const QImage & image)
 	return false;
 }
 
+#endif

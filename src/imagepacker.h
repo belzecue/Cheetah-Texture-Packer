@@ -1,11 +1,10 @@
 #ifndef IMAGEPACKER_H
 #define IMAGEPACKER_H
-#include "preferences/heuristicsettings.h"
-#include "preferences/rotationsettings.h"
-#include "preferences/sortsettings.h"
-#include <QObject>
-#include <QImage>
-#include <QRgb>
+#include "imagemetadata.h"
+#include "preferences.h"
+#include <vector>
+
+/*
 
 class MaxRects;
 class QTextStream;
@@ -45,21 +44,19 @@ struct inputImage
     packerData *id;
     inputImage *duplicateId;
     QPoint pos;
-	QSize originalSize;
-    QSize size, sizeCurrent;
+    QSize originalSize, sizeCurrent;
     QRect crop;
-	QRect section;
     QString path;
 
     QSize getSize(bool doCrop) const
     {
-        return doCrop? crop.size() : size;
+        return doCrop? crop.size() : originalSize;
 
     }
 
     QRect getCrop(bool doCrop) const
     {
-       return doCrop? crop : QRect(0, 0, size.width(), size.height());
+       return doCrop? crop : QRect(0, 0, originalSize.width(), originalSize.height());
     //   return rotated? QRect(size.height() - r.y() - r.height(),  r.x(), r.height(), r.width()) : r;
     }
 
@@ -78,17 +75,9 @@ struct inputImage
     bool cropped, rotated;
 };
 
-class ImagePacker : public QObject
+class ImagePacker
 {
-    private:
-        void internalPack(int heur, int w, int h);
-
-        void SortImages(int w, int h);
-
-    public:
-typedef QList<inputImage> List_t;
-        List_t images;
-        QList<QSize> bins;
+public:
         ImagePacker();
 
 		void drawImage(QPainter & p, QImage & img, const QRect & crop);
@@ -97,12 +86,12 @@ typedef QList<inputImage> List_t;
 		void DrawOutlines(QList<QImage> & textures);
 
         bool compareImages(QImage *img1, QImage *img2, int *i, int *j);
-        void pack(Heuristic_t heur, int w, int h);
+        void pack(Preferences::Heuristic heur, int w, int h);
 
-        unsigned AddImgesToBins(Heuristic_t heur, int w, int h);
+        unsigned AddImgesToBins(Preferences::Heuristic heur, int w, int h);
 
-        void CropLastImage(Heuristic_t heur, int w, int h, bool wh);
-        void DivideLastImage(Heuristic_t heur, int w, int h, bool wh);
+        void CropLastImage(Preferences::Heuristic heur, int w, int h, bool wh);
+        void DivideLastImage(Preferences::Heuristic heur, int w, int h, bool wh);
 
         void UpdateCrop();
 		void applyGreenScreen(QImage & image);
@@ -111,7 +100,7 @@ typedef QList<inputImage> List_t;
 
         void ClearBin(int binIndex);
 
-        int FillBin(Heuristic_t heur, int w, int h, int binIndex);
+        int FillBin(Preferences::Heuristic heur, int w, int h, int binIndex);
 
         QRect crop(const QImage &img);
         ExtrudeData getExtrude(const QRect & crop);
@@ -122,28 +111,24 @@ typedef QList<inputImage> List_t;
         void removeId(void *);
         void realculateDuplicates();
         void clear();
+
+		std::vector<ImageMetadata> images;
+		std::vector<glm::i16vec2> bins;
+
         int compare;
         quint64 area, neededArea;
         int missingImages;
         int mergedImages;
-        bool ltr, merge, square, autosize, mergeBF;
-        int cropThreshold;
-        int border;
-        int padding;
-        int extrude;
-		QPoint alignment;
-//considered to be transparent if fomrat has no alpha channel.
-		QRgb   greenScreen;
-		bool   greenScreenToAlpha;
-		bool   useGreenScreen;
-        Rotation_t rotate;
-        Sort_t     sortOrder;
-        int minFillRate;
-        int minTextureSizeX;
-        int minTextureSizeY;
+
+
+private:
+	void internalPack(int heur, int w, int h);
+
+	void SortImages(int w, int h);
+
 };
 
 
-
+*/
 
 #endif // IMAGEPACKER_H

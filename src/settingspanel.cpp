@@ -3,6 +3,7 @@
 #include "support.h"
 #include "ui_mainwindow.h"
 #include "widgets/qconstrainedspinbox.hpp"
+#include "packersettings.h"
 #include <QFormLayout>
 #include <QPushButton>
 #include <QToolButton>
@@ -13,7 +14,7 @@ typedef void (QSpinBox::*QSpinBoxChanged)(int);
 QStringList g_pixelFormats;
 
 SettingsPanel::SettingsPanel(MainWindow & parent) :
-	QObject(&parent),
+	QObject((QMainWindow*)&parent),
 	w(parent),
 	m_useBasicSettings(false),
 	h_data(0L, parent.tr("Data"), true),
@@ -101,12 +102,6 @@ SettingsPanel::SettingsPanel(MainWindow & parent) :
 	d_textureFormat.addItems(g_extensions);
 	d_textureFormat.setCurrentIndex(g_extensions.indexOf("png"));
 
-	d_pixelFormat.addItems(g_pixelFormatStrings());
-	d_sizeConstraints.setToolTip(g_pixelFormatToolTip());
-	d_pixelFormat.setEnabled(PIXEL_FORMAT_ENABLED);
-	d_pixelFormat.setCurrentIndex(g_pixelFormatDefault());
-
-
 #if SCALING_ENABLED
 	d_scaleMode.addItems  (g_scaleStrings());
 	d_scaleMode.setToolTip(g_scaleToolTip());
@@ -116,22 +111,22 @@ SettingsPanel::SettingsPanel(MainWindow & parent) :
 	s_scale.setValue(1.0);
 #endif
 
-    d_sizeConstraints.addItems  (g_sizeConstraintStrings());
-    d_sizeConstraints.setToolTip(g_sizeConstraintToolTip());
+	AddItems(&d_sizeConstraints, Preferences::SizeConstraintStrings);
+	SetToolTip(&d_sizeConstraints, Preferences::SizeConstraintToolTip);
 
-    d_sort.addItems  (g_sortStrings());
-	d_sort.setToolTip(g_sortToolTip());
+	AddItems(&d_sort, Preferences::SortStrings);
+	SetToolTip(&d_sort, Preferences::SortToolTip);
 
 	d_algorithm.addItem(tr("MaxRects"));
 	d_algorithm.setEnabled(false);
 	d_pack.addItem(tr("Yes"));
 	d_pack.setEnabled(false);
 
-	d_rotation.addItems(g_rotationStrings());
-	d_rotation.setToolTip(g_rotationToolTip());
+	AddItems(&d_rotation, Preferences::RotationStrings);
+	SetToolTip(&d_rotation, Preferences::RotationToolTip);
 
-	d_heuristics.addItems(g_heuristicStrings());
-	d_heuristics.setToolTip(g_heuristicToolTip());
+	AddItems(&d_heuristics, Preferences::HeuristicStrings);
+	SetToolTip(&d_heuristics, Preferences::HeuristicToolTip);
 
 
 //set default values:
@@ -228,7 +223,6 @@ font.setPointSize(8);
 	connect(&d_heuristics,			qComboBoxChanged, &w, &MainWindow::updateAuto);
 	connect(&d_maxSize,             qComboBoxChanged, &w, &MainWindow::updateAuto);
 	connect(&d_pack,                qComboBoxChanged, &w, &MainWindow::updateAuto);
-	connect(&d_pixelFormat,         qComboBoxChanged, &w, &MainWindow::updateAuto);
 	connect(&d_rotation,            qComboBoxChanged, &w, &MainWindow::updateAuto);
 #if SCALING_ENABLED
     connect(&d_scaleMode,           qComboBoxChanged, &w, &MainWindow::updateAuto);
@@ -280,6 +274,67 @@ font.setPointSize(8);
 SettingsPanel::~SettingsPanel()
 {
 	clear();
+}
+
+void SettingsPanel::GetSettings(PackerSettings& packer)
+{
+	packer.rotate    = (Preferences::Rotation) d_heuristics.currentIndex();
+	packer.heuristic = (Preferences::Heuristic) d_heuristics.currentIndex();
+	packer.sortOrder = (Preferences::Sort) d_sort.currentIndex();
+	packer.padding   = s_shapePadding.value();
+
+	packer.cropThreshold =  crop()? s_alphaThreshold.value() : 0;;
+	packer.extrude       = s_extrude.value();
+    packer.border        = s_borderPadding.value();
+	packer.minFillRate   = s_autosizeFillRate.value();
+
+    packer.merge    =  c_merge.isChecked();
+	packer.mergeBF  = false;
+    packer.square   = c_square.isChecked();
+    packer.autosize =  c_autosize.isChecked();
+
+	packer.greenScreenToAlpha = c_greenScreenAlpha.isChecked();
+	packer.useGreenScreen     = crop() && c_greenScreen.isChecked();
+
+	packer.alignment = glm::u8vec2(s_alignX->value(), s_alignY->value());
+
+	uint32_t eax = t_greenScreen.text().toUInt(0L, 16);
+	packer.greenScreen = glm::u8vec4((eax >> 16)&0xFF, (eax >> 8)&0xFF, (eax)&0xFF, 0xFF);
+
+	packer.minSize = glm::i16vec2(
+				  s_maxX->value(),
+				  s_maxY->value()
+			);
+
+	packer.outDir = t_fileDir->text().toStdString();
+	packer.outFile =  t_fileName.text().toStdString();
+	packer.imageFormat =  d_textureFormat.currentText().toStdString();
+}
+
+
+void SettingsPanel::AddItems(QComboBox * box, const char * items[])
+{
+	QStringList strings;
+
+	for(const char ** p = items; **p != '\0'; ++p)
+		strings << QApplication::translate("Preferences", *p, Q_NULLPTR);
+
+	box->addItems(std::move(strings));
+}
+
+void SettingsPanel::SetToolTip(QComboBox * box, const char * items[])
+{
+	QString strings;
+
+	strings = "<html><head/><body>";
+
+	for(const char ** p = items; **p != '\0'; ++p)
+		strings += QString("<p>%1</p>").arg(
+			QApplication::translate("HelpText", *p, Q_NULLPTR));
+
+	strings += "</body></html>";
+
+	box->setToolTip(std::move(strings));
 }
 
 bool SettingsPanel::doesOwnObject(void * it) const
@@ -413,7 +468,6 @@ void SettingsPanel::populateOutputFiles()
 	if(h_outputFiles.isChecked())
 	{
 		m_formLayout->addRow(tr("Texture Format"), &d_textureFormat);
-		m_formLayout->addRow(tr("Pixel Format"), &d_pixelFormat);
 	}
 	m_formLayout->addRow(tr("Output Directory"), &m_textureDir);
 	m_formLayout->addRow(tr("File Name"), &t_fileName);
@@ -481,7 +535,7 @@ void SettingsPanel::populatePadding()
 
 void SettingsPanel::getFolder()
 {
-    t_fileDir->setText(QFileDialog::getExistingDirectory(&w,
+	t_fileDir->setText(QFileDialog::getExistingDirectory((QMainWindow*)&w,
                         tr("Open Directory"),
                         t_fileDir->text(),
                         QFileDialog::ShowDirsOnly));
@@ -497,7 +551,7 @@ void SettingsPanel::validateFolderText()
 	}
 	else
 	{
-		QMessageBox::warning(&w, QCoreApplication::applicationName(), tr("Unable to open directory \"%1\"").arg(t_fileDir->text()));
+		QMessageBox::warning((QMainWindow*)&w, QCoreApplication::applicationName(), tr("Unable to open directory \"%1\"").arg(t_fileDir->text()));
 		t_fileDir->setText(m_directory);
 	}
 }
