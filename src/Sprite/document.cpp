@@ -1,6 +1,6 @@
 #include "document.h"
 #include "mainwindow.h"
-#include "spriteobject.h"
+#include "Sprite/object.h"
 #include "ui_mainwindow.h"
 #include "widgets/glviewwidget.h"
 #include "Shaders/transparencyshader.h"
@@ -45,7 +45,7 @@ void Document::OnError(std::string const& what)
 {
 	window->DisplayError(what);
 }
-
+/*
 void Document::RenderObjectSheet(GLViewWidget * gl, Object* object, int frame)
 {
 	if(object == nullptr || gl == nullptr)
@@ -57,7 +57,7 @@ void Document::RenderObjectSheet(GLViewWidget * gl, Object* object, int frame)
 	if(!object->material.unlit.is_empty)
 	{
 		if(object->material.image_slots[(int)Material::Tex::BaseColor])
-			RenderSpriteSheet(gl, object->material.image_slots[(int)Material::Tex::BaseColor].get(), frame);
+			object->RenderSpriteSheet(gl, frame, (int)Material::Tex::BaseColor);
 
 		return;
 	}
@@ -72,6 +72,23 @@ void Document::RenderSpriteSheet(GLViewWidget * gl, Image * image, int frame)
 
 	image->Render(gl, frame, -1);
 }
+
+void Document::RenderAttachments(GLViewWidget * gl, Object* object, int )
+{
+	if(object == nullptr || gl == nullptr)
+		return;
+
+	for(int i = 0; i < (int)Material::Tex::Total; ++i)
+	{
+		if(object->material.image_slots[i] != nullptr)
+		{
+			RenderSpriteSheet(gl, object->material.image_slots[i].get(), -1);
+			break;
+		}
+	}
+}
+
+*/
 
 void Document::RenderAnimation(GLViewWidget * gl,  Object* object, int id)
 {
@@ -96,20 +113,10 @@ void Document::RenderAnimation(GLViewWidget * gl,  Object* object, int id)
 	time *= 1e-6;
 	int frame = anim->frames[(int)(time * anim->fps) % anim->frames.size()];
 
-	RenderObjectSheet(gl, object, frame);
+	object->RenderObjectSheet(gl, frame);
 }
 
-void Document::RenderAttachments(GLViewWidget * gl, Object* object, int )
+GLViewWidget * Document::GetViewWidget() const
 {
-	if(object == nullptr || gl == nullptr)
-		return;
-
-	for(int i = 0; i < (int)Material::Tex::Total; ++i)
-	{
-		if(object->material.image_slots[i] != nullptr)
-		{
-			RenderSpriteSheet(gl, object->material.image_slots[i].get(), -1);
-			break;
-		}
-	}
+	return window->ui->viewWidget;
 }

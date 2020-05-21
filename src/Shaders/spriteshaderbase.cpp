@@ -1,6 +1,6 @@
 #include "spriteshaderbase.h"
 #include "src/widgets/glviewwidget.h"
-#include "src/document.h"
+#include "src/Sprite/document.h"
 #include "defaulttextures.h"
 
 void SpriteShaderBase::bindCenter(GLViewWidget* gl, bool center)

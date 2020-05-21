@@ -1,12 +1,12 @@
 #include "spritemodel.h"
-#include "src/document.h"
+#include "src/Sprite/document.h"
 #include "src/commandlist.h"
 #include "mainwindow.h"
-#include "spriteobject.h"
+#include "Sprite/object.h"
 #include "ui_mainwindow.h"
 #include <fx/gltf.h>
 #include <iostream>
-#include "image.h"
+#include "Sprite/image.h"
 #include <QMessageBox>
 
 struct ModelToken
@@ -825,7 +825,7 @@ void SpriteModel::Render(GLViewWidget * gl, QModelIndex const& index)
 	case Heirarchy::ObjectList:  	return;
 	case Heirarchy::ObjectContents:
 		if((uint32_t)entity.object < doc->objects.size())
-			doc->RenderObjectSheet(gl, doc->objects[entity.object].get());
+			doc->objects[entity.object]->RenderObjectSheet(gl);
 
 		return;
 	case Heirarchy::Material:
@@ -835,9 +835,9 @@ void SpriteModel::Render(GLViewWidget * gl, QModelIndex const& index)
 
 		auto obj = doc->objects[entity.object].get();
 		if(GetModel()[(int)entity.property].type == TokType::Texture)
-			doc->RenderSpriteSheet(gl, Get<counted_ptr<Image>>(obj->material, GetModel()[(int)entity.property]).get());
+			obj->RenderSpriteSheet(gl, (int)entity.property, -1);
 		else
-			doc->RenderObjectSheet(gl, obj);
+			obj->RenderObjectSheet(gl, -1);
 	} return;
 	case Heirarchy::Animation:
 	{
@@ -847,7 +847,7 @@ void SpriteModel::Render(GLViewWidget * gl, QModelIndex const& index)
 		auto obj = doc->objects[entity.object].get();
 
 		if((uint32_t)entity.numeric >= obj->animations.size())
-			doc->RenderObjectSheet(gl, obj);
+			obj->RenderObjectSheet(gl);
 		else
 			doc->RenderAnimation(gl, obj, entity.numeric);
 
@@ -861,8 +861,8 @@ void SpriteModel::Render(GLViewWidget * gl, QModelIndex const& index)
 		auto obj = doc->objects[entity.object].get();
 
 //render albedo
-		doc->RenderSpriteSheet(gl, Get<counted_ptr<Image>>(obj->material, GetModel()[(int)MaterialProperty::BaseColorTexture]).get());
-		doc->RenderAttachments(gl, obj, entity.numeric);
+		obj->RenderSpriteSheet(gl, (int)MaterialProperty::BaseColorTexture);
+		obj->RenderAttachments(gl, entity.numeric);
 	}	return;
 	case Heirarchy::Textures:
 		doc->RenderPackedTextures(gl, entity.object);

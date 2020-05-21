@@ -1,6 +1,6 @@
 #include "gltfmetallicroughness.h"
 #include "defaulttextures.h"
-#include "document.h"
+#include "Sprite/material.h"
 #include <glm/vec4.hpp>
 #include "src/widgets/glviewwidget.h"
 

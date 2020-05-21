@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "document.h"
+#include "Sprite/document.h"
 #include "ui_mainwindow.h"
 #include "settingspanel.h"
 #include "packersettings.h"

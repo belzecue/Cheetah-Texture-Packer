@@ -1,6 +1,6 @@
 #include "glviewwidget.h"
 #include "mainwindow.h"
-#include "document.h"
+#include "Sprite/document.h"
 #include "widgets/spritemodel.h"
 #include "ui_mainwindow.h"
 #include "Shaders/defaultvaos.h"

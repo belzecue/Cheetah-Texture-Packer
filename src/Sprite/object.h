@@ -1,7 +1,11 @@
 #ifndef SPRITEOBJECT_H
 #define SPRITEOBJECT_H
-#include "document.h"
+#include "Support/countedsizedarray.hpp"
+#include "Support/counted_string.h"
+#include "material.h"
+#include "animation.h"
 
+struct Document;
 
 struct Object
 {
@@ -36,6 +40,10 @@ struct Object
 
 		VAOc,
 	};
+
+	void RenderObjectSheet(GLViewWidget *, int frame = -1);
+	void RenderSpriteSheet(GLViewWidget *, int image_slot, int frame = -1);
+	void RenderAttachments(GLViewWidget *, int attachment = -1);
 
 	void RenderSheetBackdrop(GLViewWidget * gl, int frame);
 	void Render(GLViewWidget * gl, Material::Tex texture, int frame, int outline);

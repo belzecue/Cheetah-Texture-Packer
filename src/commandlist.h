@@ -4,7 +4,8 @@
 #include "Support/counted_ptr.hpp"
 #include "enums.hpp"
 #include "commandinterface.hpp"
-#include "document.h"
+#include "Sprite/document.h"
+#include "Sprite/object.h"
 #include <glm/vec4.hpp>
 #include <glm/vec2.hpp>
 

@@ -58,17 +58,19 @@ SOURCES += src/main.cpp\
 	src/Shaders/spriteshaderbase.cpp \
 	src/Shaders/transparencyshader.cpp \
 	src/Shaders/velvetshader.cpp \
+	src/Sprite/animation.cpp \
+	src/Sprite/document.cpp \
+	src/Sprite/image.cpp \
+	src/Sprite/material.cpp \
+	src/Sprite/object.cpp \
 	src/Support/counted_string.cpp \
 	src/Support/imagesupport.cpp \
 	src/commandlist.cpp \
-	src/document.cpp \
-	src/image.cpp \
 	src/imagemetadata.cpp \
 	src/lf_math.cpp \
         src/mainwindow.cpp \
 	src/packersettings.cpp \
 	src/preferences.cpp \
-	src/spriteobject.cpp \
 	src/widgets/glviewwidget.cpp \
 	src/widgets/spritemodel.cpp \
         src/widgets/view.cpp \
@@ -125,6 +127,11 @@ HEADERS  += src/mainwindow.h \
 	src/Shaders/spriteshaderbase.h \
 	src/Shaders/transparencyshader.h \
 	src/Shaders/velvetshader.h \
+	src/Sprite/animation.h \
+	src/Sprite/document.h \
+	src/Sprite/image.h \
+	src/Sprite/material.h \
+	src/Sprite/object.h \
 	src/Support/counted_ptr.hpp \
 	src/Support/counted_string.h \
 	src/Support/countedsizedarray.hpp \
@@ -132,13 +139,10 @@ HEADERS  += src/mainwindow.h \
 	src/Support/imagesupport.h \
 	src/commandinterface.hpp \
 	src/commandlist.h \
-	src/document.h \
 	src/enums.hpp \
-	src/image.h \
 	src/imagemetadata.h \
 	src/lf_math.h \
 	src/packersettings.h \
-	src/spriteobject.h \
 	src/widgets/glviewwidget.h \
 	src/widgets/spritemodel.h \
         src/widgets/view.h \

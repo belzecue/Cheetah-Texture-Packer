@@ -1,5 +1,4 @@
 #include "commandlist.h"
-#include "spriteobject.h"
 
 ObjectCommand::ObjectCommand(Document * doc, int obj, std::string insert) :
 	doc(doc),

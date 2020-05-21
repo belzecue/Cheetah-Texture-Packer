@@ -1,4 +1,5 @@
-#include "spriteobject.h"
+#include "object.h"
+#include "document.h"
 #include "Support/imagesupport.h"
 #include "Shaders/defaultvaos.h"
 #include "Shaders/transparencyshader.h"
@@ -54,7 +55,43 @@ std::string Object::IsImageCompatible(counted_ptr<Image> image, Material::Tex sl
 
 void Object::UpdateCachedArrays()
 {
+	int priority[] =
+	{
+		(int)Material::Tex::BaseColor,
+		(int)Material::Tex::Diffuse,
+		(int)Material::Tex::Normal,
+		(int)Material::Tex::MetallicRoughness,
+		(int)Material::Tex::SpecularGlossiness,
+		(int)Material::Tex::Occlusion,
+		(int)Material::Tex::Emission,
+		(int)Material::Tex::None
+	};
 
+	CountedSizedArray<glm::i16vec4> positions;
+	CountedSizedArray<glm::i16vec4> crop;
+	CountedSizedArray<glm::u16vec4> normalized;
+	CountedSizedArray<glm::u16vec4> normPos;
+
+	for(int const* p = priority; *p != -1; ++p)
+	{
+		if(material.image_slots[*p] == nullptr)
+			continue;
+
+		if(positions.empty())
+		{
+			positions  = material.image_slots[*p]->m_sprites;
+			crop       = material.image_slots[*p]->m_cropped;
+			normalized = material.image_slots[*p]->m_normalized;
+			normPos    = material.image_slots[*p]->m_normalizedPositions;
+		}
+
+		if(material.image_slots[*p]->m_normalizedPositions == normPos)
+			material.TexCoord((Material::Tex)*p) = 0;
+		else
+		{
+			throw std::logic_error("Sprites do not properly align.");
+		}
+	}
 
 
 
@@ -144,7 +181,7 @@ void Object::UpdateImages(Document* doc)
 		buffer.push_back(v[3]);
 	}
 
-	auto gl = doc->window->ui->viewWidget;
+	auto gl = doc->GetViewWidget();
 
 	gl->makeCurrent();
 
