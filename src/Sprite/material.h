@@ -20,13 +20,45 @@ struct Material : fx::gltf::Material
 		Total
 	};
 
+	enum
+	{
+		v_SpriteVertex,
+		v_CroppedVertex,
+		centerVBO,
+		normalizedVBO,
+		texCoord0,
+		texCoord1,
+
+		renderVBO,
+		AttachmentVBO,
+		VBOc,
+
+		SpritePadding = 0,
+		CroppedSprites,
+		AttachmentVAO,
+
+		VAOc,
+	};
+
+
 	KHR::materials::pbrSpecularGlossiness pbrSpecularGlossiness;
 	KHR::materials::unlit                 unlit;
 
-	Material::Tex                         current_slot{Tex::None};
 	counted_ptr<Image>                    image_slots[(int)Tex::Total];
+	Material::Tex                         current_slot{Tex::None};
 	int8_t                                tex_coords[(int)Tex::Total];
 	bool                                  use_specular{false};
+
+	void RenderObjectSheet(GLViewWidget *, int frame = -1);
+	void RenderSpriteSheet(GLViewWidget *, int image_slot, int frame = -1);
+	void RenderAttachments(GLViewWidget *, int attachment = -1);
+
+	void RenderSheetBackdrop(GLViewWidget * gl, int frame);
+	void Render(GLViewWidget * gl, Material::Tex texture, int frame, int outline);
+
+	std::string IsImageCompatible(Material::Tex, counted_ptr<Image>);
+	void SetImage(Material::Tex, counted_ptr<Image>);
+	void UpdateCachedArrays();
 
 	inline int & TexCoord(Tex tex)
 	{
@@ -47,6 +79,31 @@ struct Material : fx::gltf::Material
 
 		return x;
 	}
+
+private:
+	void Prepare(GLViewWidget*);
+
+	struct Pair
+	{
+		uint16_t start;
+		uint16_t length;
+	};
+
+	bool                            m_dirty{true};
+	CountedSizedArray<glm::i16vec4> m_sprites{};
+	CountedSizedArray<glm::i16vec4> m_crop{};
+	CountedSizedArray<glm::u16vec4> m_normalizedCrop{};
+	CountedSizedArray<glm::u16vec4> m_normalizedSprites{};
+
+	uint32_t                        m_spriteCount{};
+	glm::u16vec2                    m_sheetSize{};
+
+	uint32_t     m_vao[VAOc]{};
+	uint32_t     m_vbo[VBOc]{};
+
+
+
+
 };
 
 #endif // MATERIAL_H

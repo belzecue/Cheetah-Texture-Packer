@@ -137,6 +137,7 @@ HEADERS  += src/mainwindow.h \
 	src/Support/countedsizedarray.hpp \
 	src/Support/glm_iostream.hpp \
 	src/Support/imagesupport.h \
+	src/Support/vectoroperations.hpp \
 	src/commandinterface.hpp \
 	src/commandlist.h \
 	src/enums.hpp \

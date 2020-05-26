@@ -17,64 +17,25 @@ struct Object
 	};
 
 	counted_string                      name;
-	Material                            material;
+	std::unique_ptr<Material>           material{new Material()};
 	std::vector<counted_ptr<Animation>> animations;
 	std::vector<Attachment>             attachments;
-
-	enum
-	{
-		spriteVBO,
-		cropVBO,
-		centerVBO,
-		normalizedVBO,
-		texCoord0,
-		texCoord1,
-
-		renderVBO,
-		AttachmentVBO,
-		VBOc,
-
-		SpritePadding = 0,
-		CroppedSprites,
-		AttachmentVAO,
-
-		VAOc,
-	};
-
-	void RenderObjectSheet(GLViewWidget *, int frame = -1);
-	void RenderSpriteSheet(GLViewWidget *, int image_slot, int frame = -1);
-	void RenderAttachments(GLViewWidget *, int attachment = -1);
-
-	void RenderSheetBackdrop(GLViewWidget * gl, int frame);
-	void Render(GLViewWidget * gl, Material::Tex texture, int frame, int outline);
 
 	void AddRef() const { ++m_refCount; }
 	void Release() { if(--m_refCount == 0) delete this; }
 
-	std::string IsImageCompatible(counted_ptr<Image>, Material::Tex);
-	void UpdateImages(Document*);
-	void UpdateCachedArrays();
+	void RenderAttachments(GLViewWidget *, int attachment = -1);
+	void SetAttachment(int selected_attachment, glm::ivec2 position);
 
-	uint32_t                        m_spriteCount{};
-	glm::u16vec2                    m_sheetSize{};
-	glm::u16vec2                    m_spriteSize{};
 
-	CountedSizedArray<glm::i16vec4> m_sprites{};
-	CountedSizedArray<glm::i16vec4> m_crop{};
-	CountedSizedArray<glm::u16vec4> m_normalizedCrop{};
-	CountedSizedArray<glm::u16vec4> m_normalizedSprites{};
-
-	uint32_t                        m_textures[10];
-
-	uint32_t     m_vao[VAOc]{};
-	uint32_t     m_vbo[VBOc]{};
 
 private:
 	mutable std::atomic<int> m_refCount{1};
 
 	bool attachments_dirty{};
 
-
+	uint32_t m_attachmentVAO{};
+	uint32_t m_attachmentVBO{};
 };
 
 

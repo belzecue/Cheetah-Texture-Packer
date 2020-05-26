@@ -107,6 +107,7 @@ void Image::LoadFromFile()
 	gl->doneCurrent();
 }
 
+
 #if HAVE_CHROMA_KEY
 void Image::UpdateChromaKey(uint32_t color_mask, uint32_t color_key)
 {

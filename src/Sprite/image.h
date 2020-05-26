@@ -59,6 +59,7 @@ public:
 	bool hasAlpha() const { return m_hasAlpha; }
 
 	uint32_t GetTexture() const { return m_texture; };
+	glm::u16vec2 GetSize() const { return m_size; }
 
 #if HAVE_CHROMA_KEY
 	void UpdateChromaKey(uint32_t color_mask, uint32_t color_key);

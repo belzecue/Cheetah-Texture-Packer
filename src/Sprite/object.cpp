@@ -97,7 +97,7 @@ void Object::UpdateCachedArrays()
 
 
 }
-
+#if 0
 void Object::UpdateImages(Document* doc)
 {
 	int priority[] =
@@ -287,40 +287,4 @@ void Object::Render(GLViewWidget * gl, Material::Tex texture, int frame, int out
 	}
 	GL_ASSERT;
 }
-
-static bool CheckDynamics(std::string & error, float & size_ratio, CountedSizedArray<glm::i16vec4> A, CountedSizedArray<glm::i16vec4> B)
-{
-	if(A == B) return true;
-
-	if(A.size() != B.size())
-	{
-		error = "number of sprites in sprite sheet does not match previous sheets";
-		return false;
-	}
-
-	float sr = size_ratio;
-
-	for(float i = 0; i < A.size(); ++i)
-	{
-		glm::i16vec2 size0(A[i].z - A[i].x,	A[i].w - A[i].y);
-		glm::i16vec2 size1(B[i].z - B[i].x, B[i].w - B[i].y);
-
-		if(std::fabs(size0.x / (float) size0.y - size1.x / (float) size1.y) > .0001)
-		{
-			error = "aspect ratio of cropped sprite " + std::to_string(i) + " is not the same as in previous images";
-			return false;
-		}
-
-		if(sr < 0)
-			sr = size0.x / (float) size1.x;
-		else if(std::fabs(sr - size0.x / (float) size1.x) > .0001)
-		{
-			error =  "all sprites in sprite sheet must have same % of size compared to original sheet.";
-			return false;
-		}
-	}
-
-	size_ratio = sr;
-
-	return true;
-}
+#endif
