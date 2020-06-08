@@ -88,7 +88,6 @@ private:
 	int recursiveLoaderCounter;
 	bool recursiveLoaderDone;
 	float m_zoom{1.f};
-	QPixmap pattern;
 	void addDir(QString dir);
 };
 

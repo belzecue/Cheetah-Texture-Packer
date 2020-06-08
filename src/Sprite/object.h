@@ -27,7 +27,13 @@ struct Object
 	void RenderAttachments(GLViewWidget *, int attachment = -1);
 	void SetAttachment(int selected_attachment, glm::ivec2 position);
 
+	std::string IsImageCompatible(counted_ptr<Image> image, Material::Tex slot) { return material->IsImageCompatible(slot, std::move(image)); }
 
+//loosen coupling
+	inline auto RenderObjectSheet(GLViewWidget *gl, int frame = -1) { return material->RenderObjectSheet(gl, frame); }
+	inline auto OnMaterialUpdated(Document* doc) { return material->OnMaterialUpdated(doc); }
+
+	inline auto RenderSpriteSheet(GLViewWidget * gl, int image_slot, int frame = -1) { return material->RenderSpriteSheet(gl, image_slot, frame);  }
 
 private:
 	mutable std::atomic<int> m_refCount{1};

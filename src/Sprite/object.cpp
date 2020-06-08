@@ -1,9 +1,6 @@
 #include "object.h"
 #include "document.h"
 #include "Support/imagesupport.h"
-#include "Shaders/defaultvaos.h"
-#include "Shaders/transparencyshader.h"
-#include "Shaders/blitshader.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <fx/gltf.h>
@@ -15,88 +12,12 @@
 
 static bool CheckDynamics(std::string & error, float & size_ratio, CountedSizedArray<glm::i16vec4> A, CountedSizedArray<glm::i16vec4> B);
 
-std::string Object::IsImageCompatible(counted_ptr<Image> image, Material::Tex slot)
+void Object::RenderAttachments(GLViewWidget *, int attachment)
 {
-	if(slot == Material::Tex::None)
-		return "No such image slot";
-
-	image->LoadFromFile();
-
-	for(int i = 0; i < (int)Material::Tex::Total; ++i)
-	{
-		auto img = material.image_slots[i].get();
-
-		if(img == nullptr)
-			continue;
-
-		if(i == (int)slot)
-		{
-			if(img == image.get())
-				return "Given image already selected for this slot.";
-
-			continue;
-		}
-
-		if(img->m_sprites.size() != image->m_sprites.size())
-			return "number of images must be consistent on all sprite sheets used by object.";
-
-//try to merge shit...
-		if( image->m_sprites.merge(img->m_sprites)
-		&& !image->m_cropped.merge(img->m_cropped))
-			image->m_cropped.merge(image->m_sprites);
-
-		image->m_normalized.merge(img->m_normalized);
-		if(!image->m_normalizedPositions.merge(img->m_normalizedPositions))
-			return "texture coordinates of all textures do not properly align";
-	}
-
-	return std::string();
-}
-
-void Object::UpdateCachedArrays()
-{
-	int priority[] =
-	{
-		(int)Material::Tex::BaseColor,
-		(int)Material::Tex::Diffuse,
-		(int)Material::Tex::Normal,
-		(int)Material::Tex::MetallicRoughness,
-		(int)Material::Tex::SpecularGlossiness,
-		(int)Material::Tex::Occlusion,
-		(int)Material::Tex::Emission,
-		(int)Material::Tex::None
-	};
-
-	CountedSizedArray<glm::i16vec4> positions;
-	CountedSizedArray<glm::i16vec4> crop;
-	CountedSizedArray<glm::u16vec4> normalized;
-	CountedSizedArray<glm::u16vec4> normPos;
-
-	for(int const* p = priority; *p != -1; ++p)
-	{
-		if(material.image_slots[*p] == nullptr)
-			continue;
-
-		if(positions.empty())
-		{
-			positions  = material.image_slots[*p]->m_sprites;
-			crop       = material.image_slots[*p]->m_cropped;
-			normalized = material.image_slots[*p]->m_normalized;
-			normPos    = material.image_slots[*p]->m_normalizedPositions;
-		}
-
-		if(material.image_slots[*p]->m_normalizedPositions == normPos)
-			material.TexCoord((Material::Tex)*p) = 0;
-		else
-		{
-			throw std::logic_error("Sprites do not properly align.");
-		}
-	}
-
-
 
 
 }
+
 #if 0
 void Object::UpdateImages(Document* doc)
 {

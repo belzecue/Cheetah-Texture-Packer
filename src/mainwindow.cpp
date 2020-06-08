@@ -3,7 +3,6 @@
 #include "ui_mainwindow.h"
 #include "settingspanel.h"
 #include "packersettings.h"
-#include "widgets/view.h"
 #include "widgets/spritemodel.h"
 #include "support.h"
 #include <QFileDialog>
@@ -37,8 +36,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->viewWidget->w = this;
 
 	prefs = new SettingsPanel(*this);
-
-    m_view = new View(*this);
 
 	document.reset(new Document(ui->viewWidget));
 	document->window = this;
@@ -80,18 +77,6 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->statusBar->addWidget(m_status);
 	ui->statusBar->addPermanentWidget(m_scale);
 
-    pattern = QPixmap(20, 20);
-    QPainter painter(&pattern);
-
-#define BRIGHT 190
-#define SHADOW 150
-    painter.fillRect(0, 0, 10, 10, QColor(SHADOW, SHADOW, SHADOW));
-    painter.fillRect(10, 0, 10, 10, QColor(BRIGHT, BRIGHT, BRIGHT));
-    painter.fillRect(10, 10, 10, 10, QColor(SHADOW, SHADOW, SHADOW));
-    painter.fillRect(0, 10, 10, 10, QColor(BRIGHT, BRIGHT, BRIGHT));
-
-    setAcceptDrops(true);
-
 	connect(ui->editUndo,  &QAction::triggered,  this, [this]() { document->editUndo(); });
 	connect(ui->editRedo,  &QAction::triggered,  this, [this]() { document->editRedo(); });
 
@@ -128,7 +113,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     connect(ui->fileClose,   &QAction::triggered, this, &MainWindow::clearTiles);
-	/*
+/*
     connect(ui->m_zoom25,  &QAction::triggered, [this]() {  m_view->changeZoom(.25); } );
     connect(ui->m_zoom50,  &QAction::triggered, [this]() {  m_view->changeZoom(.50); } );
     connect(ui->m_zoom100, &QAction::triggered, [this]() {  m_view->changeZoom(1.0); } );
@@ -136,8 +121,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->m_zoom400, &QAction::triggered, [this]() {  m_view->changeZoom(4.0); } );
     connect(ui->m_zoom800, &QAction::triggered, [this]() {  m_view->changeZoom(8.0); } );*/
 
-    connect(ui->zoomIn , &QAction::triggered, [this]() { m_view->zoomIn(); } );
-    connect(ui->zoomOut, &QAction::triggered, [this]() { m_view->zoomOut();  } );
+    connect(ui->zoomIn , &QAction::triggered, [this]() { SetZoom(m_zoom * 9 / 8.f); } );
+    connect(ui->zoomOut, &QAction::triggered, [this]() { SetZoom(m_zoom * 8 / 9.f);  } );
 
 //	connect(ui->tilesList, &QListWidget::itemSelectionChanged, this, &MainWindow::packerRepaint);
 

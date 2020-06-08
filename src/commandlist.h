@@ -111,7 +111,7 @@ private:
 template<>
 inline void UpdateMaterialCommand<counted_ptr<Image>>::Update()
 {
-	object->UpdateImages(document);
+	object->OnMaterialUpdated(document);
 }
 
 

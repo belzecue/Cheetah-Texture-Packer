@@ -389,7 +389,7 @@ QVariant SpriteModel::data(const QModelIndex &index, int role) const
 		if((uint32_t)entity.object >= doc->objects.size())
 			return false;
 
-		auto & material =  doc->objects[entity.object]->material;
+		auto & material =  *doc->objects[entity.object]->material.get();
 		auto       detail   = GetModel()[(int)entity.property];
 
 		switch(detail.type)
@@ -572,7 +572,7 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 	if((uint32_t)entity.object >= doc->objects.size())
 		return false;
 
-	auto & material =  doc->objects[entity.object]->material;
+	auto & material = *doc->objects[entity.object]->material;
 	auto   detail   = GetModel()[(int)entity.property];
 
 	switch(detail.type)
@@ -657,7 +657,7 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 	if((uint32_t)entity.object >= doc->objects.size())
 		return false;
 
-	auto & material =  doc->objects[entity.object]->material;
+	auto & material = *doc->objects[entity.object]->material;
 	auto   detail   = GetModel()[(int)entity.property];
 
 	switch(detail.type)

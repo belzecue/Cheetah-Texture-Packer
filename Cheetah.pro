@@ -73,7 +73,6 @@ SOURCES += src/main.cpp\
 	src/preferences.cpp \
 	src/widgets/glviewwidget.cpp \
 	src/widgets/spritemodel.cpp \
-        src/widgets/view.cpp \
         src/imagepacker.cpp \
         src/imagecrop.cpp \
         src/maxrects.cpp \
@@ -146,7 +145,6 @@ HEADERS  += src/mainwindow.h \
 	src/packersettings.h \
 	src/widgets/glviewwidget.h \
 	src/widgets/spritemodel.h \
-        src/widgets/view.h \
         src/imagepacker.h \
         src/maxrects.h \
     src/support.h \

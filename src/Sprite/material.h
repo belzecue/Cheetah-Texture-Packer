@@ -5,6 +5,8 @@
 #include <fx/extensions/khr_materials.h>
 #include "Support/counted_ptr.hpp"
 
+struct Document;
+
 struct Material : fx::gltf::Material
 {
 	enum class Tex : int8_t
@@ -79,6 +81,9 @@ struct Material : fx::gltf::Material
 
 		return x;
 	}
+
+//called when material values change
+	void OnMaterialUpdated(Document*);
 
 private:
 	void Prepare(GLViewWidget*);

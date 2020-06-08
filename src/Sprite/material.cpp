@@ -1,6 +1,9 @@
 #include "material.h"
 #include "src/widgets/glviewwidget.h"
-#incldue "src/support/vectoroperations.hpp"
+#include "src/Support/vectoroperations.hpp"
+#include "Shaders/defaultvaos.h"
+#include "Shaders/transparencyshader.h"
+#include "Shaders/blitshader.h"
 
 #define UNUSED(x) (void)x;
 
