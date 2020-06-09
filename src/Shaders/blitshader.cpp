@@ -47,7 +47,7 @@ void BlitShader::bind(GLViewWidget* gl, Material * )
 	}
 
 	_gl glActiveTexture(GL_TEXTURE0);
-	_gl glUniform1i(u_texture, 1);
+	_gl glUniform1i(u_texture, 0);
 	_gl glUniform1f(u_center, false);
 	_gl glUniform1f(u_layer , 0);
 	_gl glUniform1f(u_useColor , 0);

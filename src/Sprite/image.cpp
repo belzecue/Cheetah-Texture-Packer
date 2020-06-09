@@ -4,7 +4,6 @@
 #include "Shaders/transparencyshader.h"
 #include "Shaders/blitshader.h"
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <fx/gltf.h>
 #include <cctype>
 #include <cstring>

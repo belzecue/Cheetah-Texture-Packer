@@ -80,15 +80,11 @@ static const char * kVert()
 
 		in vec2 a_vertex;
 		in vec2 a_center;
-		in vec2 a_uv;
-
-		out vec2 v_uv;
 
 		void main()
 		{
 			vec2 pos = a_vertex - mix(vec2(0, 0), a_center, u_center);
 			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, u_layer, 1.0)));
-			v_uv        = a_uv;
 		});
 }
 
@@ -104,7 +100,6 @@ static const char * kFrag()
 			float u_time;
 		};
 
-		in vec2 v_uv;
 		in vec4 gl_FragCoord;
 
 		out vec4 frag_color;

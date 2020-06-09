@@ -63,6 +63,7 @@ SOURCES += src/main.cpp\
 	src/Sprite/image.cpp \
 	src/Sprite/material.cpp \
 	src/Sprite/object.cpp \
+	src/Sprite/spritesheet.cpp \
 	src/Support/counted_string.cpp \
 	src/Support/imagesupport.cpp \
 	src/commandlist.cpp \
@@ -131,6 +132,7 @@ HEADERS  += src/mainwindow.h \
 	src/Sprite/image.h \
 	src/Sprite/material.h \
 	src/Sprite/object.h \
+	src/Sprite/spritesheet.h \
 	src/Support/counted_ptr.hpp \
 	src/Support/counted_string.h \
 	src/Support/countedsizedarray.hpp \
