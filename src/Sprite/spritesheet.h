@@ -25,8 +25,10 @@ public:
 		VBO_c,
 	};
 
-	uint32_t m_vao;
-	uint32_t m_vbo[VBO_c];
+private:
+	uint32_t    m_vao;
+	uint32_t    m_vbo[VBO_c];
+	void const* m_sprites;
 };
 
 #endif // SPRITESHEET_H

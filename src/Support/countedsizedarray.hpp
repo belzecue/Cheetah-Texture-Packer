@@ -108,6 +108,8 @@ typedef CountedSizedArray<T> self_type;
 		return true;
 	}
 
+	void const* data() const { return m_array == nullptr? nullptr : &m_array->m_data[0]; }
+
 private:
 	struct Array
 	{
