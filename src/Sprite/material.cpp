@@ -67,6 +67,11 @@ std::string Material::IsImageCompatible(Material::Tex tex, counted_ptr<Image> im
 }
 
 
+void BindCenters(uint32_t active_texture)
+{
+
+}
+
 void Material::Prepare(GLViewWidget* gl)
 {
 	if(!m_vao[0])

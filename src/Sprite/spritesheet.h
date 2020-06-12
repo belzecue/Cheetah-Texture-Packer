@@ -9,26 +9,42 @@ class GLViewWidget;
 class SpriteSheet
 {
 public:
-	SpriteSheet();
+	SpriteSheet() = default;
+	~SpriteSheet();
 
-	void Prepare(GLViewWidget*, CountedSizedArray<glm::i16vec4> sprites);
+	void Clear(GLViewWidget*);
 
-	uint32_t GetCenters() const { return m_vbo[a_centerTexBuff]; }
+	void Prepare(GLViewWidget*, CountedSizedArray<glm::i16vec4> sprites, glm::i16vec2 sheet_size);
+
+	void BindCenters      (GLViewWidget*, uint32_t active_texture);
+	void BindBoundingBoxes(GLViewWidget*, uint32_t active_texture);
+
+	bool         empty()  const { return !m_vao; }
+	glm::i16vec2 size()   const { return m_size; }
+	uint32_t     length() const { return m_length; }
 
 	enum
 	{
 		a_vertex,
-		a_sprite_id,
 
-		a_centerTexBuff,
+		a_centers,
+		a_bounds,
 
-		VBO_c,
+		VBOc,
+
+		t_centers = 0,
+		t_bounds,
+
+		TEXc,
 	};
 
 private:
-	uint32_t    m_vao;
-	uint32_t    m_vbo[VBO_c];
-	void const* m_sprites;
+	uint32_t    m_vao{};
+	uint32_t    m_vbo[VBOc]{};
+	uint32_t    m_texture[TEXc]{};
+	void const* m_sprites{};
+	glm::i16vec2 m_size{0, 0};
+	uint32_t     m_length{};
 };
 
 #endif // SPRITESHEET_H
