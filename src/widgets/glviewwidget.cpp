@@ -19,6 +19,7 @@
 #include <cmath>
 #include <chrono>
 #include <iostream>
+#include <cassert>
 
 struct Matrices
 {
@@ -345,10 +346,13 @@ void GLViewWidget::displayOpenGlError(const char * file, const char * function, 
 
     do
     {
+#ifdef NDEBUG
         QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
                                  tr("FILE: %1\nFUNC: %2\nLINE: %3\nERROR: %4")
                                  .arg(file).arg(function).arg(line).arg((const char *) gluErrorString(error)));
-
+#else
+		fprintf(stderr, "\nFILE: %s\nFUNC: %s\nLINE: %i\nERROR: %s\n", file, function, line, (const char *) gluErrorString(error));
+#endif
     } while((error = glGetError()) != GL_NO_ERROR);
 
     w->close();

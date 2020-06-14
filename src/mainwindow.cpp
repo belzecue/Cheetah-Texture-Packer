@@ -45,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	model->window = this;
 
 	ui->treeView->setModel(model.get());
+	ui->treeView->setColumnWidth(0, ui->treeView->columnWidth(0)*2);
 	ui->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(ui->treeView, &QTreeView::customContextMenuRequested, this, [this](const QPoint & point)
 	{
@@ -291,7 +292,7 @@ static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMo
 		? g_ReadMimeTypes : g_WriteMimeTypes; **p == '\0'; ++p)
 		mimeTypeFilters << *p;
 
-	dialog.setDirectory("/media/anyuser/SHAREDFILES/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
     dialog.setMimeTypeFilters(mimeTypeFilters);
     dialog.selectMimeTypeFilter("image/bmp");
     if (acceptMode == QFileDialog::AcceptSave)

@@ -13,6 +13,12 @@ class MainWindow;
 #define glAssert() displayOpenGlError(__FILE__, __FUNCTION__, __LINE__);
 #define GL_ASSERT _gl glAssert();
 
+#ifdef NDEBUG
+#define DEBUG_GL
+#else
+#define DEBUG_GL GL_ASSERT
+#endif
+
 class GLViewWidget : public QOpenGLWidget, public QOpenGLFunctions_3_3_Core
 {
 typedef QOpenGLWidget super;

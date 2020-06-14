@@ -22,6 +22,8 @@ public:
 		ImageManager(GLViewWidget *gl) : gl(gl) {}
 		~ImageManager() = default;
 
+		GLViewWidget * GetGL() const { return gl; }
+
 	private:
 	friend class Image;
 		std::map<counted_string, Image*> loadedImages;
@@ -76,7 +78,7 @@ private:
 
 	static std::mutex                       g_mutex;
 
-	ImageManager                  * m_manager{};
+	ImageManager                  * m_manager{nullptr};
 	counted_string                  m_path;
 	counted_string                  m_directory;
 	counted_string                  m_filename;

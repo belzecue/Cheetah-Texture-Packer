@@ -835,7 +835,7 @@ void SpriteModel::Render(GLViewWidget * gl, QModelIndex const& index)
 
 		auto obj = doc->objects[entity.object].get();
 		if(GetModel()[(int)entity.property].type == TokType::Texture)
-			obj->RenderSpriteSheet(gl, (int)entity.property, -1);
+			obj->RenderSpriteSheet(gl, GetTexture(entity.property), -1);
 		else
 			obj->RenderObjectSheet(gl, -1);
 	} return;
@@ -861,7 +861,7 @@ void SpriteModel::Render(GLViewWidget * gl, QModelIndex const& index)
 		auto obj = doc->objects[entity.object].get();
 
 //render albedo
-		obj->RenderSpriteSheet(gl, (int)MaterialProperty::BaseColorTexture);
+		obj->RenderSpriteSheet(gl, GetTexture(MaterialProperty::BaseColorTexture));
 		obj->RenderAttachments(gl, entity.numeric);
 	}	return;
 	case Heirarchy::Textures:

@@ -27,7 +27,7 @@ ObjectCommand::ObjectCommand(Document * doc, int obj, std::string insert) :
 
 	if(object == nullptr)
 	{
-		object = UncountedWrap(new Object());
+		object = UncountedWrap(new Object(doc->GetViewWidget()));
 		object->name = new_name;
 	}
 

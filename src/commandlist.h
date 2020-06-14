@@ -93,10 +93,13 @@ public:
 	}
 	virtual ~UpdateMaterialCommand() = default;
 
-	T * GetValue() { return (T*)(((uint8_t*)&object->material) + offset); }
+	T * GetValue() {
+		auto & material = *object->material;
+		return (T*)(((uint8_t*)&material) + offset);
+	}
 
-	void RollForward() 	{ *GetValue() = finalValue;    Update(); }
-	void RollBack()     { *GetValue() = originalValue; Update(); }
+	void RollForward() 	{ *GetValue() = finalValue;    }
+	void RollBack()     { *GetValue() = originalValue; }
 
 	void Update() {}
 
@@ -109,9 +112,15 @@ private:
 };
 
 template<>
-inline void UpdateMaterialCommand<counted_ptr<Image>>::Update()
+inline void UpdateMaterialCommand<counted_ptr<Image>>::RollForward()
 {
-	object->OnMaterialUpdated(document);
+	object->SetImage(finalValue, GetValue());
+}
+
+template<>
+inline void UpdateMaterialCommand<counted_ptr<Image>>::RollBack()
+{
+	object->SetImage(originalValue, GetValue());
 }
 
 

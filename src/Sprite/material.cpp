@@ -2,26 +2,41 @@
 #include "src/widgets/glviewwidget.h"
 #include "src/Support/vectoroperations.hpp"
 #include "Shaders/defaultvaos.h"
-#include "Shaders/transparencyshader.h"
-#include "Shaders/blitshader.h"
 #include "Shaders/gltfmetallicroughness.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include "spritesheet.h"
 
 #define UNUSED(x) (void)x;
 
-void Material::SetImage(Material::Tex tex, counted_ptr<Image> image)
+void Material::Clear(GLViewWidget * gl)
 {
-	std::string error = IsImageCompatible(tex, image);
+	if(m_spriteSheet)
+		m_spriteSheet->Clear(gl);
+}
+
+void Material::SetImage(counted_ptr<Image> image, counted_ptr<Image> * slot)
+{
+	int tex = (slot - &image_slots[0]);
+
+	if(!(0 <= tex && tex < (int)Tex::Total))
+	{
+		throw std::runtime_error("bad texture pointer...");
+	}
+
+	std::string error = IsImageCompatible((Tex)tex, image);
 
 	if(!error.empty())
 		throw std::logic_error(error);
 
-	image_slots[(int)tex] = image;
+	if(image == image_slots[tex])
+		return;
 
-	if(tex <= current_slot
+	image_slots[tex] = image;
+
+	if((Tex)tex <= current_slot
 	|| current_slot == Tex::None)
 	{
-		current_slot = tex;
+		current_slot = (Tex)tex;
 
 		m_sprites           = image->m_sprites;
 		m_crop              = image->m_cropped;
@@ -49,6 +64,8 @@ std::string Material::IsImageCompatible(Material::Tex tex, counted_ptr<Image> im
 	if(image == nullptr)
 		return {};
 
+	image->LoadFromFile();
+
 //first one so anything goes
 	if(current_slot == Tex::None)
 		return {};
@@ -74,6 +91,9 @@ void BindCenters(uint32_t active_texture)
 
 void Material::Prepare(GLViewWidget* gl)
 {
+
+#if 0
+
 	if(!m_vao[0])
 	{
 		_gl glGenVertexArrays(VAOc, &m_vao[0]);
@@ -170,7 +190,7 @@ UploadTextureData(gl, m_cropped, glm::i16vec4(0, 0, m_size.x, m_size.y), m_size.
 
 _gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[TexCoord]);
 UploadTextureData(gl, m_normalized, glm::u16vec4(0, 0, USHRT_MAX, USHRT_MAX));GL_ASSERT;
-
+#endif
 }
 
 void Material::RenderObjectSheet(GLViewWidget * gl, int frame)
@@ -181,7 +201,7 @@ void Material::RenderObjectSheet(GLViewWidget * gl, int frame)
 		{
 			if(image_slots[i])
 			{
-				RenderSpriteSheet(gl, i, frame);
+				RenderSpriteSheet(gl, (Tex)i, frame);
 				return;
 			}
 		}
@@ -193,6 +213,7 @@ void Material::RenderObjectSheet(GLViewWidget * gl, int frame)
 	auto db = GetRenderData(frame);
 	RenderSheetBackdrop(gl, db);
 
+	/*
 	//draw sprites
 	_gl glDisable(GL_DEPTH_TEST);
 	gltfMetallicRoughness::Shader.bind(gl, this);
@@ -201,26 +222,27 @@ void Material::RenderObjectSheet(GLViewWidget * gl, int frame)
 
 	gltfMetallicRoughness::Shader.bindLayer(gl, 4);
 	_gl glDrawElements(GL_TRIANGLES, db.fr_elements, GL_UNSIGNED_SHORT, db.fr_offset());
+*/
 
 	GL_ASSERT;
 }
 
 
-void Material::RenderSpriteSheet(GLViewWidget * gl, int image_slot, int frame)
+void Material::RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, int frame)
 {
-	if(image_slots[image_slot] == nullptr) return;
-
+	if(image_slots[(int)image_slot] == nullptr) return;
 
 	Prepare(gl);
 	auto db = GetRenderData(frame);
 	RenderSheetBackdrop(gl, db);
-
+/*
 	BlitShader::Shader.bind(gl, this);
 	BlitShader::Shader.bindCenter(gl, db.center);
 	BlitShader::Shader.bindMatrix(gl, db.matrix);
 
 	BlitShader::Shader.bindLayer(gl, 4);
 	_gl glDrawElements(GL_TRIANGLES, db.fr_elements, GL_UNSIGNED_SHORT, db.fr_offset());
+	*/
 }
 
 RenderData Material::GetRenderData(int frame)
@@ -230,66 +252,27 @@ RenderData Material::GetRenderData(int frame)
 	if(frame >= 0) frame %= m_sprites.size();
 
 	r.frame       = frame;
-	r.bg_elements = frame < 0? 6 * m_sprites.size() : 6;
-	r.bg_first    = 6 * (1 + frame * (frame > 0));
+	r.elements    = frame < 0? 6 * m_sprites.size() : 6;
+	r.first       = 6 * (1 + frame * (frame > 0));
 	r.center      = (frame >= 0);
 
 	r.matrix      = glm::mat4(1);
 	if(!r.center) r.matrix = glm::translate(r.matrix, -glm::vec3(m_sheetSize.x/2.f, m_sheetSize.y/2.f, 0));
 
-	if(m_spriteIndices.empty())
+	if(!m_spriteIndices.empty())
 	{
-		r.fr_elements = r.bg_elements;
-		r.fr_first    = r.bg_first;
-	}
-	else
-	{
-		r.fr_elements = frame < 0? m_spriteIndices.back().end() : m_spriteIndices.back().length;
-		r.fr_first    = frame < 0? 0 : m_spriteIndices[frame].start;
+		r.elements = frame < 0? m_spriteIndices.back().end() : m_spriteIndices.back().length;
+		r.first    = frame < 0? 0 : m_spriteIndices[frame].start;
 	}
 
 	return r;
 }
 
-void Material::RenderSheetBackdrop(GLViewWidget * gl, RenderData db)
+void Material::RenderSheetBackdrop(GLViewWidget * gl, RenderData const& db)
 {
-	GL_ASSERT;
+	if(m_spriteSheet == nullptr)
+		m_spriteSheet.reset(new SpriteSheet());
 
-	if(m_sprites.empty())
-		return;
-
-//draw backdrop
-	_gl glBindVertexArray(m_vao[SpriteSheet]);
-
-	if(db.frame < 0)
-	{
-		TransparencyShader::Shader.bind(gl);
-		TransparencyShader::Shader.bindCenter(gl, db.center);
-		TransparencyShader::Shader.bindMatrix(gl, db.matrix);
-
-		_gl glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);GL_ASSERT;
-	}
-
-//draw sprites boxes
-	BlitShader::Shader.bind(gl, this);
-	BlitShader::Shader.bindCenter(gl, db.center);
-	BlitShader::Shader.bindMatrix(gl, db.matrix);
-
-	BlitShader::Shader.bindLayer(gl, 3);
-	BlitShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 0));GL_ASSERT;
-
-	_gl glDrawElements(GL_TRIANGLES, db.bg_elements, GL_UNSIGNED_SHORT, db.bg_offset());GL_ASSERT;
-
-//draw sprite outlines
-	_gl glBindVertexArray(m_vao[1]);
-
-	if(db.frame < 0)
-	{
-		BlitShader::Shader.bindLayer(gl, 2);
-		BlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1));
-		_gl glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);GL_ASSERT;
-	}
-
-	GL_ASSERT;
-
+	m_spriteSheet->Prepare(gl, m_sprites, m_sheetSize);
+	m_spriteSheet->RenderSheet(gl, db);
 }

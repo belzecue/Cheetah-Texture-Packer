@@ -16,6 +16,9 @@ struct Object
 		bool dirty{};
 	};
 
+	Object(GLViewWidget * gl) : gl(gl) {}
+	~Object() { material->Clear(gl); }
+
 	counted_string                      name;
 	std::unique_ptr<Material>           material{new Material()};
 	std::vector<counted_ptr<Animation>> animations;
@@ -27,16 +30,16 @@ struct Object
 	void RenderAttachments(GLViewWidget *, int attachment = -1);
 	void SetAttachment(int selected_attachment, glm::ivec2 position);
 
-	std::string IsImageCompatible(counted_ptr<Image> image, Material::Tex slot) { return material->IsImageCompatible(slot, std::move(image)); }
+	inline std::string IsImageCompatible(counted_ptr<Image> const& image, Material::Tex slot) { return material->IsImageCompatible(slot, image); }
+	inline void SetImage(counted_ptr<Image> const& image, counted_ptr<Image> * slot) { material->SetImage(image, slot); }
 
 //loosen coupling
 	inline auto RenderObjectSheet(GLViewWidget *gl, int frame = -1) { return material->RenderObjectSheet(gl, frame); }
-	inline auto OnMaterialUpdated(Document* doc) { return material->OnMaterialUpdated(doc); }
-
-	inline auto RenderSpriteSheet(GLViewWidget * gl, int image_slot, int frame = -1) { return material->RenderSpriteSheet(gl, image_slot, frame);  }
+	inline auto RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, int frame = -1) { return material->RenderSpriteSheet(gl, image_slot, frame);  }
 
 private:
 	mutable std::atomic<int> m_refCount{1};
+	GLViewWidget * gl;
 
 	bool attachments_dirty{};
 

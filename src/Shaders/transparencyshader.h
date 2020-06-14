@@ -1,30 +1,22 @@
 #ifndef TRANSPARENCYSHADER_H
 #define TRANSPARENCYSHADER_H
+#include "spriteshaderbase.h"
 #include "glprogram.h"
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
 #include <atomic>
 
-class TransparencyShader : public glProgram
+class TransparencyShader : public SpriteShaderBase
 {
 public:
 static TransparencyShader Shader;
-    void bind(GLViewWidget* gl);
-
-	void bindCenter(GLViewWidget* gl, bool);
-	void bindLayer(GLViewWidget* gl, int);
-	void bindMatrix(GLViewWidget* gl, glm::mat4x4 const&);
+    void bind(GLViewWidget* gl, Material *) override;
 
 private:
-	std::atomic<int> refCount{0};
-
-    void construct(GLViewWidget* gl);
-	void destruct(GLViewWidget* gl);
+    void construct(GLViewWidget* gl) override;
+	void destruct(GLViewWidget* gl) override;
 
 	int32_t u_spriteSize;
-	int32_t u_center;
-	int32_t u_layer;
-	int32_t u_object;
 };
 
 #endif // TRANSPARENCYSHADER_H

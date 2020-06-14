@@ -17,14 +17,13 @@ public:
 	static void bindTextures(GLViewWidget* gl, Material * material);
 	void bindTexture(GLViewWidget* gl, Tex);
 
-	void bindCenter(GLViewWidget* gl, bool);
 	void bindLayer(GLViewWidget* gl, int);
 	void bindMatrix(GLViewWidget* gl, glm::mat4x4 const&);
 
 protected:
-	int32_t u_center;
 	int32_t u_layer;
 	int32_t u_object;
+	int32_t u_centers;
 };
 
 #endif // SPRITESHADERBASE_H

@@ -15,13 +15,13 @@ void gltfMetallicRoughness::construct(GLViewWidget* gl)
     compile(gl, kVert(), GL_VERTEX_SHADER);
     tryLoad(gl, kFrag(), GL_FRAGMENT_SHADER);
     attribute(gl, 0, "a_vertex");
-	attribute(gl, 1, "a_center");
+	attribute(gl, 1, "a_id");
     attribute(gl, 3, "a_texCoord0");
 	attribute(gl, 4, "a_texCoord1");
     link(gl);
 
 	uniform(gl, u_object,          "u_object");
-	uniform(gl, u_center,          "u_center");
+	uniform(gl, u_centers,         "u_centers");
 	uniform(gl, u_layer,           "u_layer");
 
 	uniform(gl, u_normal,          "u_normal");
@@ -58,8 +58,12 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 		_gl glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	_gl glUniform1f(u_center, false);
+
+	_gl glActiveTexture(GL_TEXTURE10);
+	_gl glBindTexture(GL_TEXTURE_BUFFER, 0);
+
 	_gl glUniform1f(u_layer , 0);
+	_gl glUniform1i(u_centers, 10);
 
 	_gl glUniform1i( u_diffuse, 0);
 	_gl glUniform1i( u_normal, 1);
@@ -123,14 +127,15 @@ static const char * kVert()
 		};
 
 		uniform mat4  u_object;
-		uniform float u_center;
 		uniform float u_layer;
+		uniform samplerBuffer u_centers;
 
 		in vec2 a_vertex;
 		in vec2 a_center;
 		in vec2 a_texCoord0;
 		in vec2 a_texCoord1;
 		in vec2 a_sprCoord;
+		in int  a_id;
 
 		out vec3 v_position;
 		out vec4 v_texCoord;
@@ -138,7 +143,7 @@ static const char * kVert()
 
 		void main()
 		{
-			vec2 pos    = a_vertex - mix(vec2(0, 0), a_center, u_center);
+			vec2 pos    = a_vertex - texelFetch(u_centers, a_id).rg;
 			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, 0, 1.0)));
 			v_position  = gl_Position.xyz;
 

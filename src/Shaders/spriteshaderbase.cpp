@@ -3,11 +3,6 @@
 #include "src/Sprite/document.h"
 #include "defaulttextures.h"
 
-void SpriteShaderBase::bindCenter(GLViewWidget* gl, bool center)
-{
-	_gl glUniform1f(u_center, center);
-}
-
 void SpriteShaderBase::bindLayer(GLViewWidget* gl, int layer)
 {
 	float l = layer / (float) UCHAR_MAX;
@@ -22,6 +17,23 @@ void SpriteShaderBase::bindMatrix(GLViewWidget* gl, glm::mat4x4 const& matrix)
 void SpriteShaderBase::bindTextures(GLViewWidget* gl, Material * material)
 {
 	typedef Material::Tex Tex;
+
+	if(!material)
+	{
+		_gl glActiveTexture(GL_TEXTURE0);
+		_gl glBindTexture(GL_TEXTURE_2D, 0);
+
+		_gl glActiveTexture(GL_TEXTURE1);
+		_gl glBindTexture(GL_TEXTURE_2D, 0);
+
+		_gl glActiveTexture(GL_TEXTURE2);
+		_gl glBindTexture(GL_TEXTURE_2D, 0);
+
+		_gl glActiveTexture(GL_TEXTURE3);
+		_gl glBindTexture(GL_TEXTURE_2D, 0);
+		return;
+	}
+
 
 	bool use_specular = !material->pbrSpecularGlossiness.is_empty;
 

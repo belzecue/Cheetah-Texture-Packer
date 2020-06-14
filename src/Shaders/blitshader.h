@@ -20,9 +20,6 @@ private:
 	void destruct(GLViewWidget* gl) override;
 
 	int32_t u_texture;
-	int32_t u_center;
-	int32_t u_layer;
-	int32_t u_object;
 	int32_t u_color;
 	int32_t u_useColor;
 };

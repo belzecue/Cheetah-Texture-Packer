@@ -13,12 +13,12 @@ void TransparencyShader::construct(GLViewWidget* gl)
     compile(gl, kVert(), GL_VERTEX_SHADER);
     compile(gl, kFrag(), GL_FRAGMENT_SHADER);
     attribute(gl, 0, "a_vertex");
-	attribute(gl, 1, "a_center");
+	attribute(gl, 1, "a_id");
     attribute(gl, 2, "a_uv");
     link(gl);
 	uniform(gl, u_layer,   "u_layer");
-	uniform(gl, u_center,  "u_center");
 	uniform(gl, u_object,  "u_object");
+	uniform(gl, u_centers,  "u_centers");
 
 	glDefaultVAOs::AddRef();
 }
@@ -29,9 +29,9 @@ void TransparencyShader::destruct(GLViewWidget* gl)
 	glDefaultVAOs::Release(gl);
 }
 
-void TransparencyShader::bind(GLViewWidget* gl)
+void TransparencyShader::bind(GLViewWidget* gl, Material *)
 {
-	_gl glAssert();
+	GL_ASSERT;
 
     if(bindShader(gl))
 	{
@@ -41,25 +41,13 @@ void TransparencyShader::bind(GLViewWidget* gl)
         _gl glDisable(GL_CULL_FACE);
 	}
 
-	_gl glUniform1f(u_center, false);
+	_gl glUniform1i(u_centers, 10);
 	_gl glUniform1f(u_layer , 0);
 
-    _gl glAssert();
-}
+	_gl glActiveTexture(GL_TEXTURE10);
+	_gl glBindTexture(GL_TEXTURE_BUFFER, 0);
 
-void TransparencyShader::bindCenter(GLViewWidget* gl, bool center)
-{
-	_gl glUniform1f(u_center, center);
-}
-
-void TransparencyShader::bindLayer(GLViewWidget* gl, int layer)
-{
-	_gl glUniform1f(u_layer, layer / (float) SHRT_MAX);
-}
-
-void TransparencyShader::bindMatrix(GLViewWidget* gl, glm::mat4x4 const& matrix)
-{
-	_gl glUniformMatrix4fv(u_object, 1, GL_FALSE, &matrix[0][0]);
+    GL_ASSERT;
 }
 
 static const char * kVert()
@@ -75,15 +63,16 @@ static const char * kVert()
 		};
 
 		uniform mat4  u_object;
-		uniform float u_center;
 		uniform float u_layer;
+		uniform samplerBuffer u_centers;
 
 		in vec2 a_vertex;
 		in vec2 a_center;
+		in int  a_id;
 
 		void main()
 		{
-			vec2 pos = a_vertex - mix(vec2(0, 0), a_center, u_center);
+			vec2 pos = a_vertex - texelFetch(u_centers, a_id).rg;
 			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, u_layer, 1.0)));
 		});
 }

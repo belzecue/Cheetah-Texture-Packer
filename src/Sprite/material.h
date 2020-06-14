@@ -4,19 +4,17 @@
 #include <fx/gltf.h>
 #include <fx/extensions/khr_materials.h>
 #include "Support/counted_ptr.hpp"
+#include "spritesheet.h"
 
 struct Document;
+class SpriteSheet;
 
 struct RenderData
 {
-	intptr_t bg_first;
-	uint32_t bg_elements;
+	uint32_t first;
+	uint32_t elements;
 
-	uint32_t fr_elements;
-	intptr_t fr_first;
-
-	void * bg_offset() const  { return (void*)(bg_first * sizeof(short)); }
-	void * fr_offset() const  { return (void*)(fr_first * sizeof(short)); }
+	void * offset() const  { return (void*)(first * sizeof(short)); }
 
 	bool     center;
 	short    frame;
@@ -26,6 +24,8 @@ struct RenderData
 struct Material : fx::gltf::Material
 {
 public:
+	~Material() = default;
+
 	enum class Tex : int8_t
 	{
 		None = -1,
@@ -55,7 +55,6 @@ public:
 		renderVBO,
 		VBOc,
 
-		SpriteSheet = 0,
 		CroppedSprites,
 
 		VAOc,
@@ -69,16 +68,18 @@ public:
 	Material::Tex                         current_slot{Tex::None};
 	int8_t                                tex_coords[(int)Tex::Total];
 
+	void Clear(GLViewWidget * gl);
+
 	bool isUnlit() const { return !unlit.is_empty; }
 	bool isSpecular() const { return !pbrSpecularGlossiness.is_empty; }
 
 	void RenderObjectSheet(GLViewWidget *, int frame = -1);
-	void RenderSpriteSheet(GLViewWidget *, int image_slot, int frame = -1);
+	void RenderSpriteSheet(GLViewWidget *, Tex image_slot, int frame = -1);
 
 	void Render(GLViewWidget * gl, Material::Tex texture, int frame, int outline);
 
 	std::string IsImageCompatible(Material::Tex, counted_ptr<Image>);
-	void SetImage(Material::Tex, counted_ptr<Image>);
+	void SetImage(counted_ptr<Image> image, counted_ptr<Image> * slot);
 
 	inline int & TexCoord(Tex tex)
 	{
@@ -100,14 +101,11 @@ public:
 		return x;
 	}
 
-//called when material values change
-	void OnMaterialUpdated(Document*) {}
-
 private:
 	void Prepare(GLViewWidget*);
 
 	RenderData GetRenderData(int frame);
-	void RenderSheetBackdrop(GLViewWidget * gl, RenderData frame);
+	void RenderSheetBackdrop(GLViewWidget * gl, RenderData const& frame);
 
 	struct Pair
 	{
@@ -123,6 +121,8 @@ private:
 	CountedSizedArray<glm::u16vec4> m_normalizedCrop{};
 	CountedSizedArray<glm::u16vec4> m_normalizedSprites{};
 	CountedSizedArray<Pair>         m_spriteIndices;
+
+	std::unique_ptr<SpriteSheet>    m_spriteSheet;
 
 	uint32_t                        m_spriteCount{};
 	glm::u16vec2                    m_sheetSize{};

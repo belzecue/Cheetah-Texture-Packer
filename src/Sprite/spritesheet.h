@@ -5,6 +5,7 @@
 #include "Support/countedsizedarray.hpp"
 
 class GLViewWidget;
+class RenderData;
 
 class SpriteSheet
 {
@@ -14,7 +15,8 @@ public:
 
 	void Clear(GLViewWidget*);
 
-	void Prepare(GLViewWidget*, CountedSizedArray<glm::i16vec4> sprites, glm::i16vec2 sheet_size);
+	void Prepare(GLViewWidget*, CountedSizedArray<glm::i16vec4> & sprites, glm::i16vec2 sheet_size);
+	void RenderSheet(GLViewWidget * gl, RenderData db);
 
 	void BindCenters      (GLViewWidget*, uint32_t active_texture);
 	void BindBoundingBoxes(GLViewWidget*, uint32_t active_texture);
@@ -32,14 +34,19 @@ public:
 
 		VBOc,
 
-		t_centers = 0,
-		t_bounds,
+		t_bounds = 0,
+		t_centers,
 
 		TEXc,
+
+		v_Squares = 0,
+		v_Outlines,
+
+		VAOc,
 	};
 
 private:
-	uint32_t    m_vao{};
+	uint32_t    m_vao[VAOc]{};
 	uint32_t    m_vbo[VBOc]{};
 	uint32_t    m_texture[TEXc]{};
 	void const* m_sprites{};
