@@ -44,6 +44,8 @@ void BlitShader::bind(GLViewWidget* gl, Material * )
 
 		_gl glEnable(GL_BLEND);
 		_gl glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		_gl glDisable(GL_CULL_FACE);
 	}
 
 	_gl glActiveTexture(GL_TEXTURE10);
@@ -85,7 +87,7 @@ static const char * kVert()
 		layout(std140) uniform Matrices
 		{
 			mat4  u_projection;
-			mat4  u_modelview;
+			mat4  u_camera;
 			ivec4 u_screenSize;
 			 vec4 u_cursorColor;
 			float u_time;
@@ -93,8 +95,9 @@ static const char * kVert()
 
 		uniform mat4  u_object;
 		uniform float u_layer;
-		uniform samplerBuffer u_centers;
+		uniform isamplerBuffer u_centers;
 
+	//	in int gl_VertexID;
 		in vec2 a_vertex;
 		in vec2 a_center;
 		in vec2 a_uv;
@@ -104,8 +107,8 @@ static const char * kVert()
 
 		void main()
 		{
-			vec2 pos = a_vertex - texelFetch(u_centers, a_id).rg;
-			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, 0, 1.0)));
+			vec2 pos = a_vertex + texelFetch(u_centers, gl_VertexID/4).rg;
+			gl_Position = u_projection * (u_camera * (u_object * vec4(pos, 0, 1.0)));
 			v_uv        = a_uv;
 		});
 }

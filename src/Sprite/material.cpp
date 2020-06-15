@@ -257,7 +257,7 @@ RenderData Material::GetRenderData(int frame)
 	r.center      = (frame >= 0);
 
 	r.matrix      = glm::mat4(1);
-	if(!r.center) r.matrix = glm::translate(r.matrix, -glm::vec3(m_sheetSize.x/2.f, m_sheetSize.y/2.f, 0));
+//	if(!r.center) r.matrix = glm::translate(r.matrix, -glm::vec3(m_sheetSize.x/2.f, m_sheetSize.y/2.f, 0));
 
 	if(!m_spriteIndices.empty())
 	{

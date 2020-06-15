@@ -128,7 +128,7 @@ static const char * kVert()
 
 		uniform mat4  u_object;
 		uniform float u_layer;
-		uniform samplerBuffer u_centers;
+		uniform isamplerBuffer u_centers;
 
 		in vec2 a_vertex;
 		in vec2 a_center;

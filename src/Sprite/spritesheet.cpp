@@ -1,10 +1,11 @@
 #include "spritesheet.h"
-#include "src/widgets/glviewwidget.h"
-#include "Shaders/defaultvaos.h"
-#include "Support/vectoroperations.hpp"
 #include "material.h"
 #include "Shaders/transparencyshader.h"
 #include "Shaders/blitshader.h"
+#include "Shaders/defaultvaos.h"
+#include "Support/vectoroperations.hpp"
+#include "src/widgets/glviewwidget.h"
+#include <iostream>
 #include <cassert>
 
 #define UNUSED(x) (void)x;
@@ -29,6 +30,7 @@ void SpriteSheet::Clear(GLViewWidget* gl)
 
 	m_sprites = 0;
 	m_size    = glm::i16vec2(0, 0);
+	m_length  = 0;
 }
 
 struct vertex
@@ -59,6 +61,7 @@ void SpriteSheet::Prepare(GLViewWidget* gl, CountedSizedArray<glm::i16vec4> & sp
 
 	m_sprites = sprites.data();
 	m_size    = sheet_size;
+	m_length  = sprites.size();
 
 	if(m_sprites == nullptr)
 		return Clear(gl);
@@ -123,22 +126,26 @@ void SpriteSheet::Prepare(GLViewWidget* gl, CountedSizedArray<glm::i16vec4> & sp
 		}
 
 
-		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[a_bounds]); DEBUG_GL
-		_gl glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(vec[0]), &vec[0], GL_STATIC_DRAW); DEBUG_GL
+		_gl glBindBuffer(GL_TEXTURE_BUFFER, m_vbo[a_bounds]); DEBUG_GL
+		_gl glBufferData(GL_TEXTURE_BUFFER, vec.size() * sizeof(vec[0]), &vec[0], GL_STATIC_DRAW); DEBUG_GL
 	}
 
-	glm::i16vec2 sheet_center(m_size.x/2, m_size.y/2);
 	{
+		glm::i16vec2 sheet_center(m_size.x/2, m_size.y/2);
+
 		std::vector<glm::i16vec2> vec;
 		vec.reserve(sprites.size()+1);
 
 		vec.push_back({0, 0});
 
 		for(uint32_t i = 0; i < sprites.size(); ++i)
-			vec.push_back({(sprites[i].x + sprites[i].z) / 2 - sheet_center.x, -(sprites[i].y + sprites[i].w) / 2 - sheet_center.y});
+		{
+			vec.push_back({(sprites[i].x + sprites[i].z) / 2 - sheet_center.x, -((sprites[i].y + sprites[i].w) / 2 - sheet_center.y)});
+		//	vec.push_back({1, 1});
+		}
 
-		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[a_centers]); DEBUG_GL
-		_gl glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(vec[0]), &vec[0], GL_STATIC_DRAW); DEBUG_GL
+		_gl glBindBuffer(GL_TEXTURE_BUFFER, m_vbo[a_centers]); DEBUG_GL
+		_gl glBufferData(GL_TEXTURE_BUFFER, vec.size() * sizeof(vec[0]), &vec[0], GL_STATIC_DRAW); DEBUG_GL
 	}
 
 	_gl glBindTexture(GL_TEXTURE_BUFFER, m_texture[t_centers]);	DEBUG_GL;
@@ -181,7 +188,7 @@ void SpriteSheet::RenderSheet(GLViewWidget * gl, RenderData db)
 	if(db.frame < 0)
 	{
 		TransparencyShader::Shader.bind(gl, nullptr);
-		if(db.center) BindCenters(gl, GL_TEXTURE10);
+		if(!db.center) BindCenters(gl, GL_TEXTURE10);
 		TransparencyShader::Shader.bindMatrix(gl, db.matrix);
 
 		_gl glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);GL_ASSERT;
@@ -189,19 +196,19 @@ void SpriteSheet::RenderSheet(GLViewWidget * gl, RenderData db)
 
 //draw sprites boxes
 	BlitShader::Shader.bind(gl, nullptr);
-	if(db.center) BindCenters(gl, GL_TEXTURE10);
+	if(!db.center) BindCenters(gl, GL_TEXTURE10);
 	BlitShader::Shader.bindMatrix(gl, db.matrix);
 
 	BlitShader::Shader.bindLayer(gl, 3);
-	BlitShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 0));GL_ASSERT;
+	BlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 0, 1)); DEBUG_GL
 
-	_gl glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_SHORT, offset);GL_ASSERT;
+	_gl glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_SHORT, offset); DEBUG_GL
 
 //draw sprite outlines
 	if(db.frame < 0)
 	{
 		BlitShader::Shader.bindLayer(gl, 2);
-		BlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1));
+		BlitShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 1));
 		_gl glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);GL_ASSERT;
 	}
 
