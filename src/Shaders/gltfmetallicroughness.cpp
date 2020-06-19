@@ -3,6 +3,7 @@
 #include "Sprite/material.h"
 #include <glm/vec4.hpp>
 #include "src/widgets/glviewwidget.h"
+#include <iostream>
 
 #define SHADER(k) "#version 150\n" #k
 static const char * kVert();
@@ -12,12 +13,27 @@ gltfMetallicRoughness gltfMetallicRoughness::Shader;
 
 void gltfMetallicRoughness::construct(GLViewWidget* gl)
 {
+static const char tex_template[] = "a_texCoord_";
+
     compile(gl, kVert(), GL_VERTEX_SHADER);
     tryLoad(gl, kFrag(), GL_FRAGMENT_SHADER);
     attribute(gl, 0, "a_vertex");
 	attribute(gl, 1, "a_id");
-    attribute(gl, 3, "a_texCoord0");
-	attribute(gl, 4, "a_texCoord1");
+
+	{
+		char buffer[sizeof(tex_template)];
+		strncpy(buffer, tex_template, sizeof(buffer));
+
+		for(int i = 0; i < 8; ++i)
+		{
+			buffer[sizeof(buffer)-2] = '0' + i;
+
+			std::cerr << buffer << std::endl;
+
+			attribute(gl, i+2, buffer);
+		}
+	}
+
     link(gl);
 
 	uniform(gl, u_object,          "u_object");
@@ -30,6 +46,7 @@ void gltfMetallicRoughness::construct(GLViewWidget* gl)
 	uniform(gl, u_pbr,             "u_pbr");
 
 	uniform(gl, u_alphaMode,       "u_alphaMode");
+
 	uniform(gl, u_texCoords,       "u_texCoords");
 	uniform(gl, u_NOMR,            "u_NOMR");
 	uniform(gl, u_specularFactor,  "u_specularFactor");
@@ -129,17 +146,24 @@ static const char * kVert()
 		uniform mat4  u_object;
 		uniform float u_layer;
 		uniform isamplerBuffer u_centers;
+		uniform ivec4 u_texCoords;
 
 		in vec2 a_vertex;
 		in vec2 a_center;
-		in vec2 a_texCoord0;
+		in vec4 a_texCoord0;
 		in vec2 a_texCoord1;
-		in vec2 a_sprCoord;
+		in vec2 a_texCoord2;
+		in vec2 a_texCoord3;
+		in vec2 a_texCoord4;
+		in vec2 a_texCoord5;
+		in vec2 a_texCoord6;
+		in vec2 a_texCoord7;
+
 		in int  a_id;
 
 		out vec3 v_position;
-		out vec4 v_texCoord;
-		out vec2 v_sprCoord;
+		out vec4 v_texCoord0;
+		out vec4 v_sprCoord1;
 
 		void main()
 		{
@@ -147,8 +171,20 @@ static const char * kVert()
 			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, 0, 1.0)));
 			v_position  = gl_Position.xyz;
 
-			v_texCoord = vec4(a_texCoord0, a_texCoord1);
-			v_sprCoord = a_sprCoord;
+			vec2 texCoord[9] = vec2[9](
+				v_texCoord0.xy,
+				v_texCoord0.wz,
+				v_texCoord1.xy,
+				v_texCoord2.xy,
+				v_texCoord3.xy,
+				v_texCoord4.xy,
+				v_texCoord5.xy,
+				v_texCoord6.xy,
+				v_texCoord7.xy,
+			);
+
+			v_texCoord0 = glm::vec4(texCoord[u_texCoords[0] % 9], texCoord[u_texCoords[1] % 9]);
+			v_texCoord1 = glm::vec4(texCoord[u_texCoords[2] % 9], texCoord[u_texCoords[3] % 9]);
 		});
 }
 
@@ -170,7 +206,6 @@ uniform sampler2D u_diffuse;
 uniform sampler2D u_pbr;
 
 uniform float u_alphaMode;
-uniform ivec4 u_texCoords;
 uniform vec4  u_NOMR;
 uniform vec4  u_specularFactor;
 uniform vec4  u_baseColorFactor;
@@ -274,8 +309,8 @@ void main()
 	);
 
 // The albedo may be defined from a base texture or a flat color
-	vec4 baseColor = texture(u_diffuse, texCoord[u_texCoords[2]]) * u_baseColorFactor;
-	vec4 pbr       = texture(u_pbr,     texCoord[u_texCoords[3]]);
+	vec4 baseColor = texture(u_diffuse, texCoord1.xy) * u_baseColorFactor;
+	vec4 pbr       = texture(u_pbr,     texCoord1.zw);
 	vec3 diffuseColor = baseColor.rgb;
 	vec3 specularColor;
 	float alphaRoughness;
@@ -318,7 +353,7 @@ void main()
 
 	vec3 screen_space = vec3(gl_FragCoord.xy - u_screenSize.xy * .5,  256 - v_position.z * .004);
 
-	vec3 n = getNormal(texCoord[u_texCoords[0]]);                             // normal at surface point
+	vec3 n = getNormal(texCoord[v_texCoords0.xy);                             // normal at surface point
 	vec3 v = normalize(screen_space);                // Vector from surface point to camera
 
 	PBRInfo pbrInputs = PBRInfo(

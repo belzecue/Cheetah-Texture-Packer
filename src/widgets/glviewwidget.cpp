@@ -214,16 +214,15 @@ void GLViewWidget::wheelEvent(QWheelEvent * wheel)
 		if(wheel->orientation() == Qt::Vertical)
 		{
       //      if(w->document == nullptr) return;
-
+#if 0
 			auto pos = wheel->posF();
 			float angle = wheel->angleDelta().y();
 			float factor = std::pow(1.0015, angle);
 
             factor = w->SetZoom(w->GetZoom() * factor);
 
-		//	glm::vec2 scroll = glm::mix(scroll_destination, scroll_start, glm::vec2(factor));
+			glm::vec2 scroll = glm::mix(scroll_destination, scroll_start, glm::vec2(factor));
 
-			/*
 			if(factor != 1)
 			{
                 glm::vec2 scroll_start       = w->GetScroll();
@@ -234,7 +233,7 @@ void GLViewWidget::wheelEvent(QWheelEvent * wheel)
 
                 w->SetScroll(scroll_destination);
 			}
-			*/
+#endif
 
 			return;
 		}

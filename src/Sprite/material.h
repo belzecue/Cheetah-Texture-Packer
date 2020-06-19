@@ -24,6 +24,7 @@ struct RenderData
 struct Material : fx::gltf::Material
 {
 public:
+	Material();
 	~Material() = default;
 
 	enum class Tex : int8_t
@@ -42,22 +43,14 @@ public:
 	enum
 	{
 //sprite sheet
-		v_SheetVertex,
-		v_SheetCenters,
+		v_sheetCoordBegin,
+		v_sheetCoordEnd = v_sheetCoordBegin + (int)Tex::Total,
 
-		v_SpriteVertex,
-		v_CroppedVertex,
-		v_SpriteCentersVBO,
-		normalizedVBO,
-		texCoord0,
-		texCoord1,
-
-		renderVBO,
-		VBOc,
-
-		CroppedSprites,
-
-		VAOc,
+		v_positions = v_sheetCoordEnd,
+		v_spriteId,
+		v_texCoord,
+		v_indices,
+		VBOc
 	};
 
 
@@ -103,6 +96,8 @@ public:
 
 private:
 	void Prepare(GLViewWidget*);
+	void CreateDefaultArrays(GLViewWidget* gl);
+	void CreateIdBuffer(GLViewWidget* gl);
 
 	RenderData GetRenderData(int frame);
 	void RenderSheetBackdrop(GLViewWidget * gl, RenderData const& frame);
@@ -120,16 +115,19 @@ private:
 	CountedSizedArray<glm::i16vec4> m_crop{};
 	CountedSizedArray<glm::u16vec4> m_normalizedCrop{};
 	CountedSizedArray<glm::u16vec4> m_normalizedSprites{};
-	CountedSizedArray<Pair>         m_spriteIndices;
+
+	CountedSizedArray<glm::vec2>    m_normalizedPositions{};
+	CountedSizedArray<Pair>         m_spriteIndices{};
+	CountedSizedArray<Pair>         m_spriteVertices{};
 
 	std::unique_ptr<SpriteSheet>    m_spriteSheet;
 
 	uint32_t                        m_spriteCount{};
 	glm::u16vec2                    m_sheetSize{};
 
-	uint32_t     m_vao[VAOc]{};
+	uint32_t     m_vao{};
 	uint32_t     m_vbo[VBOc]{};
-
+	uint32_t     m_vboFlags{0};
 };
 
 #endif // MATERIAL_H

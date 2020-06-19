@@ -200,7 +200,7 @@ void SpriteSheet::RenderSheet(GLViewWidget * gl, RenderData db)
 	BlitShader::Shader.bindMatrix(gl, db.matrix);
 
 	BlitShader::Shader.bindLayer(gl, 3);
-	BlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 0, 1)); DEBUG_GL
+	BlitShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 0)); DEBUG_GL
 
 	_gl glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_SHORT, offset); DEBUG_GL
 

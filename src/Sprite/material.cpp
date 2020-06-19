@@ -3,15 +3,38 @@
 #include "src/Support/vectoroperations.hpp"
 #include "Shaders/defaultvaos.h"
 #include "Shaders/gltfmetallicroughness.h"
+#include "Shaders/transparencyshader.h"
+#include "Shaders/blitshader.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "spritesheet.h"
 
 #define UNUSED(x) (void)x;
 
+Material::Material()
+{
+	pbrMetallicRoughness.baseColorTexture.texCoord = 2 + (int)Tex::BaseColor;
+	pbrSpecularGlossiness.diffuseTexture.texCoord  = 2 + (int)Tex::Diffuse;
+	pbrMetallicRoughness.metallicRoughnessTexture.texCoord = 2 + (int)Tex::MetallicRoughness;
+	pbrSpecularGlossiness.specularGlossinessTexture.texCoord = 2 + (int)Tex::SpecularGlossiness;
+	normalTexture.texCoord    = 2 + (int)Tex::Normal;
+	occlusionTexture.texCoord = 2 + (int)Tex::Occlusion;
+	emissiveTexture.texCoord  = 2 + (int)Tex::Emission;
+
+}
+
 void Material::Clear(GLViewWidget * gl)
 {
 	if(m_spriteSheet)
 		m_spriteSheet->Clear(gl);
+
+	if(m_vao)
+	{
+		_gl glDeleteBuffers(VBOc, m_vbo);
+		_gl glDeleteVertexArrays(1, &m_vao);
+
+		memset(m_vbo, 0, sizeof(m_vbo));
+		m_vao = 0;
+	}
 }
 
 void Material::SetImage(counted_ptr<Image> image, counted_ptr<Image> * slot)
@@ -32,6 +55,7 @@ void Material::SetImage(counted_ptr<Image> image, counted_ptr<Image> * slot)
 		return;
 
 	image_slots[tex] = image;
+	m_vboFlags |= (1 << tex);
 
 	if((Tex)tex <= current_slot
 	|| current_slot == Tex::None)
@@ -83,114 +107,145 @@ std::string Material::IsImageCompatible(Material::Tex tex, counted_ptr<Image> im
 	return "sprites in image do not properly align with sprites in material.";
 }
 
-
-void BindCenters(uint32_t active_texture)
+void Material::CreateDefaultArrays(GLViewWidget* gl)
 {
+	if(!m_normalizedPositions.empty() || m_spriteCount == 0)
+		return;
 
+	m_normalizedPositions = CountedSizedArray<glm::vec2>(m_spriteCount * 4);
+	m_spriteIndices       = CountedSizedArray<Pair>(m_spriteCount);
+	m_spriteVertices      = CountedSizedArray<Pair>(m_spriteCount);
+
+	for(uint32_t i = 0; i < m_spriteCount; ++i)
+		m_spriteIndices[i] = {(uint16_t)(i*6), 6};
+
+	for(uint32_t i = 0; i < m_spriteCount; ++i)
+		m_spriteVertices[i] = {(uint16_t)(i*4), 4};
+
+	for(uint32_t i = 0; i < m_spriteCount; ++i)
+	{
+		m_normalizedPositions[i*4+0] = glm::vec2(-1.f,  1.f);
+		m_normalizedPositions[i*4+1] = glm::vec2( 1.f,  1.f);
+		m_normalizedPositions[i*4+2] = glm::vec2( 1.f, -1.f);
+		m_normalizedPositions[i*4+3] = glm::vec2(-1.f, -1.f);
+	}
+
+	CreateIdBuffer(gl);
+
+	auto indices = CountedSizedArray<short>(m_spriteCount * 6);
+
+	for(uint32_t i = 0; i < m_spriteCount; ++i)
+	{
+		indices[i*6+0] = i*4+0;
+		indices[i*6+1] = i*4+1;
+		indices[i*6+2] = i*4+2;
+
+		indices[i*6+3] = i*4+2;
+		indices[i*6+4] = i*4+1;
+		indices[i*6+5] = i*4+3;
+	}
+
+	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_spriteId]); DEBUG_GL
+	_gl glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), &indices[0], GL_DYNAMIC_DRAW); DEBUG_GL
+}
+
+void Material::CreateIdBuffer(GLViewWidget* gl)
+{
+	std::vector<short> array(m_normalizedPositions.size(), 0);
+
+	for(uint32_t i = 0; i < m_spriteCount; ++i)
+	{
+		auto pair   = m_spriteVertices[i];
+
+		for(uint32_t k = 0; k < pair.length; ++k)
+		{
+			array[k+pair.start] = i+1;
+		}
+	}
+
+	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_spriteId]); DEBUG_GL
+	_gl glBufferData(GL_ARRAY_BUFFER, array.size() * sizeof(array[0]), &array[0], GL_DYNAMIC_DRAW); DEBUG_GL
 }
 
 void Material::Prepare(GLViewWidget* gl)
 {
-
-#if 0
-
-	if(!m_vao[0])
+	if(!m_vao)
 	{
-		_gl glGenVertexArrays(VAOc, &m_vao[0]);
+		_gl glGenVertexArrays(1, &m_vao);
 		_gl glGenBuffers(VBOc, &m_vbo[0]);
 
 //sprite sheet
-		_gl glBindVertexArray(m_vao[SpriteSheet]);
-		glDefaultVAOs::BindSquareIndexVBO(gl);
+		_gl glBindVertexArray(m_vao);
+		_gl glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[v_indices]);
 
-		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_SheetVertex]);
+		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_positions]);
 		_gl glVertexAttribPointer(0, 2, GL_SHORT, GL_FALSE, 0, nullptr);
+		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_spriteId]);
+		_gl glVertexAttribIPointer(1, 1, GL_SHORT, 0, nullptr);
 
-		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_SheetCenters]);
-		_gl glVertexAttribPointer(1, 2, GL_SHORT, GL_FALSE, 0, nullptr);
+		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_texCoord]);
+		_gl glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, 8, nullptr);
+		_gl glVertexAttribPointer(3, 2, GL_UNSIGNED_SHORT, GL_TRUE, 8, (void*)4);
 
-		_gl glEnableVertexAttribArray(0);
-		_gl glEnableVertexAttribArray(1);
+		for(int i = 0; i < (int)Tex::Total; ++i)
+		{
+			_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_sheetCoordBegin+i]);
+			_gl glVertexAttribPointer(4+i, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+		}
+
+		for(int i = 0; i < v_indices; ++i)
+			_gl glEnableVertexAttribArray(i);
 
 		GL_ASSERT;
 	}
 
 //upload data
-	if(m_dirty == false) return;
-	m_dirty = false;
-
-//backdrop
-
-
-
-//sprite centers
-//
-
-	if(!m_vao[0])
+	if(m_dirty != false)
 	{
-	_gl glGenVertexArrays(VAOc, &m_vao[0]);
-	_gl glGenBuffers(VBOc, &m_vbo[0]);
-
-	_gl glBindVertexArray(m_vao[0]);
-	glDefaultVAOs::BindSquareIndexVBO(gl);GL_ASSERT;
-
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[SpriteCoords]);
-	_gl glVertexAttribPointer(0, 2, GL_SHORT, GL_FALSE, 0, nullptr);GL_ASSERT;
-
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[Centers]);
-	_gl glVertexAttribPointer(1, 2, GL_SHORT, GL_FALSE, 0, nullptr);GL_ASSERT;
-
-	_gl glEnableVertexAttribArray(0);
-	_gl glEnableVertexAttribArray(1);GL_ASSERT;
-
-	_gl glBindVertexArray(m_vao[1]);
-	glDefaultVAOs::BindSquareIndexVBO(gl);GL_ASSERT;
-
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[CropBoxes]);
-	_gl glVertexAttribPointer(0, 2, GL_SHORT, GL_FALSE, 0, nullptr);GL_ASSERT;
-
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[Centers]);
-	_gl glVertexAttribPointer(1, 2, GL_SHORT, GL_FALSE, 0, nullptr);GL_ASSERT;
-
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[TexCoord]);
-	_gl glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, 0, nullptr);GL_ASSERT;
-
-	_gl glEnableVertexAttribArray(0);
-	_gl glEnableVertexAttribArray(1);
-	_gl glEnableVertexAttribArray(3);GL_ASSERT;
-
-//upload perminant things
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[SpriteCoords]);
-	UploadTextureData(gl, m_sprites, glm::i16vec4(0, 0, m_size.x, m_size.y), m_size.y);GL_ASSERT;
-
-	std::vector<glm::i16vec2> vec;
-	vec.reserve((m_sprites.size()+1));GL_ASSERT;
-
-	vec.push_back({m_size.x/2, m_size.y/2});
-	vec.push_back({m_size.x/2, m_size.y/2});
-	vec.push_back({m_size.x/2, m_size.y/2});
-	vec.push_back({m_size.x/2, m_size.y/2});
-
-	for(uint32_t i = 0; i < m_sprites.size(); ++i)
-	{
-		vec.push_back({(m_sprites[i].x + m_sprites[i].z)/2, m_size.y - (m_sprites[i].y + m_sprites[i].w)/2});
-		vec.push_back({(m_sprites[i].x + m_sprites[i].z)/2, m_size.y - (m_sprites[i].y + m_sprites[i].w)/2});
-		vec.push_back({(m_sprites[i].x + m_sprites[i].z)/2, m_size.y - (m_sprites[i].y + m_sprites[i].w)/2});
-		vec.push_back({(m_sprites[i].x + m_sprites[i].z)/2, m_size.y - (m_sprites[i].y + m_sprites[i].w)/2});
+		m_dirty = false;
 	}
 
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[Centers]);
-	_gl glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(vec[0]), &vec[0], GL_STATIC_DRAW);GL_ASSERT;
-}
+	CreateDefaultArrays(gl);
 
-_gl glBindVertexArray(m_vao[0]);
+	if(m_vboFlags)
+	{
+		auto flags = m_vboFlags;
+		m_vboFlags = 0;
 
-_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[CropBoxes]);
-UploadTextureData(gl, m_cropped, glm::i16vec4(0, 0, m_size.x, m_size.y), m_size.y);GL_ASSERT;
+		for(int i = 0; i < (int)Tex::Total; ++i)
+		{
+			if(!(flags >> i)) continue;
 
-_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[TexCoord]);
-UploadTextureData(gl, m_normalized, glm::u16vec4(0, 0, USHRT_MAX, USHRT_MAX));GL_ASSERT;
-#endif
+			if(image_slots[i] == nullptr)
+				continue;
+
+			std::vector<glm::vec2> coords(m_normalizedPositions.size());
+
+			for(uint32_t j = 0; j < m_normalizedPositions.size(); ++j)
+			{
+				glm::vec2 pos = m_normalizedPositions[j];
+				pos.y *= -1;
+				coords[j] = (pos + 1.f) / 2.f;
+			}
+
+			for(uint32_t j = 0; j < m_spriteCount; ++j)
+			{
+				auto square = image_slots[i]->m_sprites[j];
+				auto pair   = m_spriteVertices[j];
+
+				for(uint32_t k = 0; k < pair.length; ++k)
+				{
+					auto & v = coords[k+pair.start];
+					v = glm::mix(glm::vec2(square.x, square.y), glm::vec2(square.z, square.w), v);
+				}
+			}
+
+			_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_sheetCoordBegin+i]);
+			_gl glBufferData(GL_ARRAY_BUFFER, coords.size() * sizeof(coords[0]), &coords[0], GL_DYNAMIC_DRAW);
+		}
+	}
+
+	DEBUG_GL
 }
 
 void Material::RenderObjectSheet(GLViewWidget * gl, int frame)
@@ -235,14 +290,15 @@ void Material::RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, in
 	Prepare(gl);
 	auto db = GetRenderData(frame);
 	RenderSheetBackdrop(gl, db);
-/*
+
+	_gl glBindVertexArray(m_vao);
+
 	BlitShader::Shader.bind(gl, this);
-	BlitShader::Shader.bindCenter(gl, db.center);
+	if(!db.center) m_spriteSheet->BindCenters(gl, GL_TEXTURE10);
 	BlitShader::Shader.bindMatrix(gl, db.matrix);
 
 	BlitShader::Shader.bindLayer(gl, 4);
-	_gl glDrawElements(GL_TRIANGLES, db.fr_elements, GL_UNSIGNED_SHORT, db.fr_offset());
-	*/
+	_gl glDrawElements(GL_TRIANGLES, db.elements, GL_UNSIGNED_SHORT, db.offset());
 }
 
 RenderData Material::GetRenderData(int frame)
@@ -252,8 +308,8 @@ RenderData Material::GetRenderData(int frame)
 	if(frame >= 0) frame %= m_sprites.size();
 
 	r.frame       = frame;
-	r.elements    = frame < 0? 6 * m_sprites.size() : 6;
-	r.first       = 6 * (1 + frame * (frame > 0));
+	r.elements    = 0;
+	r.first       = 0;
 	r.center      = (frame >= 0);
 
 	r.matrix      = glm::mat4(1);
@@ -261,8 +317,8 @@ RenderData Material::GetRenderData(int frame)
 
 	if(!m_spriteIndices.empty())
 	{
-		r.elements = frame < 0? m_spriteIndices.back().end() : m_spriteIndices.back().length;
-		r.first    = frame < 0? 0 : m_spriteIndices[frame].start;
+		r.elements = frame >= 0? m_spriteIndices[frame].length : m_spriteIndices.back().end();
+		r.first    = frame >= 0? m_spriteIndices[frame].start  : 0;
 	}
 
 	return r;
