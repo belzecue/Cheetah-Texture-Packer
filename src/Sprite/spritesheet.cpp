@@ -42,7 +42,7 @@ struct vertex
 
 inline void PushSprite(std::vector<vertex> & vec, glm::i16vec4 item, uint32_t id)
 {
-	glm::ivec2 center((item.x + item.z) / 2, (item.y + item.w) / 2);
+	glm::ivec2 center = SpriteSheet::GetCenter(item);
 
 	vec.push_back({{item.x  - center.x, -(item.y -  center.y)}, {0, 0}, id});
 	vec.push_back({{item.z  - center.x, -(item.y -  center.y)}, {1, 0}, id});

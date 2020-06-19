@@ -99,7 +99,6 @@ static const char * kVert()
 
 	//	in int gl_VertexID;
 		in vec2 a_vertex;
-		in vec2 a_center;
 		in vec2 a_uv;
 		in int  a_id;
 
@@ -107,7 +106,7 @@ static const char * kVert()
 
 		void main()
 		{
-			vec2 pos = a_vertex + texelFetch(u_centers, gl_VertexID/4).rg;
+			vec2 pos = a_vertex + texelFetch(u_centers, a_id).rg;
 			gl_Position = u_projection * (u_camera * (u_object * vec4(pos, 0, 1.0)));
 			v_uv        = a_uv;
 		});

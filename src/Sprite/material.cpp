@@ -10,6 +10,7 @@
 
 #define UNUSED(x) (void)x;
 
+
 Material::Material()
 {
 	pbrMetallicRoughness.baseColorTexture.texCoord = 2 + (int)Tex::BaseColor;
@@ -132,21 +133,47 @@ void Material::CreateDefaultArrays(GLViewWidget* gl)
 
 	CreateIdBuffer(gl);
 
-	auto indices = CountedSizedArray<short>(m_spriteCount * 6);
-
-	for(uint32_t i = 0; i < m_spriteCount; ++i)
 	{
-		indices[i*6+0] = i*4+0;
-		indices[i*6+1] = i*4+1;
-		indices[i*6+2] = i*4+2;
+		auto indices = CountedSizedArray<short>(m_spriteCount * 6);
 
-		indices[i*6+3] = i*4+2;
-		indices[i*6+4] = i*4+1;
-		indices[i*6+5] = i*4+3;
+		for(uint32_t i = 0; i < m_spriteCount; ++i)
+		{
+			indices[i*6+0] = i*4+0;
+			indices[i*6+1] = i*4+1;
+			indices[i*6+2] = i*4+3;
+
+			indices[i*6+3] = i*4+3;
+			indices[i*6+4] = i*4+1;
+			indices[i*6+5] = i*4+2;
+		}
+
+		_gl glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[v_indices]); DEBUG_GL
+		_gl glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), &indices[0], GL_DYNAMIC_DRAW); DEBUG_GL
 	}
 
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_spriteId]); DEBUG_GL
-	_gl glBufferData(GL_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), &indices[0], GL_DYNAMIC_DRAW); DEBUG_GL
+//create null textures
+	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_texCoord]); DEBUG_GL
+	_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::u16vec4), nullptr, GL_DYNAMIC_DRAW); DEBUG_GL
+
+//create positions
+
+	{
+		auto vec = CountedSizedArray<glm::i16vec2>(m_spriteCount * 4);
+
+		for(uint32_t i = 0; i < m_spriteCount; ++i)
+		{
+			glm::ivec2 center = SpriteSheet::GetCenter(m_sprites[i]);
+			glm::ivec4 crop = glm::ivec4(m_crop[i]) - glm::ivec4(center, center);
+
+			vec[i*4+0] = glm::i16vec2(crop.x, crop.y);
+			vec[i*4+1] = glm::i16vec2(crop.z, crop.y);
+			vec[i*4+2] = glm::i16vec2(crop.z, crop.w);
+			vec[i*4+3] = glm::i16vec2(crop.x, crop.w);
+		}
+
+		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_positions]); DEBUG_GL
+		_gl glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(vec[0]), &vec[0], GL_DYNAMIC_DRAW); DEBUG_GL
+	}
 }
 
 void Material::CreateIdBuffer(GLViewWidget* gl)
@@ -217,7 +244,10 @@ void Material::Prepare(GLViewWidget* gl)
 			if(!(flags >> i)) continue;
 
 			if(image_slots[i] == nullptr)
-				continue;
+			{
+				_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_sheetCoordBegin+i]);
+				_gl glBufferData(GL_ARRAY_BUFFER, m_normalizedPositions.size() * sizeof(glm::vec2), nullptr, GL_DYNAMIC_DRAW);
+			}
 
 			std::vector<glm::vec2> coords(m_normalizedPositions.size());
 
@@ -297,8 +327,11 @@ void Material::RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, in
 	if(!db.center) m_spriteSheet->BindCenters(gl, GL_TEXTURE10);
 	BlitShader::Shader.bindMatrix(gl, db.matrix);
 
-	BlitShader::Shader.bindLayer(gl, 4);
+	BlitShader::Shader.bindLayer(gl, 8);
+	BlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1)); DEBUG_GL
+	_gl glDisable(GL_BLEND);
 	_gl glDrawElements(GL_TRIANGLES, db.elements, GL_UNSIGNED_SHORT, db.offset());
+
 }
 
 RenderData Material::GetRenderData(int frame)
@@ -330,5 +363,5 @@ void Material::RenderSheetBackdrop(GLViewWidget * gl, RenderData const& db)
 		m_spriteSheet.reset(new SpriteSheet());
 
 	m_spriteSheet->Prepare(gl, m_sprites, m_sheetSize);
-	m_spriteSheet->RenderSheet(gl, db);
+//	m_spriteSheet->RenderSheet(gl, db);
 }

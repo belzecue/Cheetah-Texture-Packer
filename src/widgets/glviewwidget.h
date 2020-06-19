@@ -9,6 +9,8 @@
 #include <map>
 
 class MainWindow;
+class QOpenGLDebugLogger;
+class QOpenGLDebugMessage;
 
 #define glAssert() displayOpenGlError(__FILE__, __FUNCTION__, __LINE__);
 #define GL_ASSERT _gl glAssert();
@@ -43,6 +45,8 @@ public:
 
 
 private:
+	void handleLoggedMessage(QOpenGLDebugMessage const& debugMessage);
+
 #if 0
 	void mouseMoveEvent 		(QMouseEvent * event)	Q_DECL_OVERRIDE;
 	void mousePressEvent		(QMouseEvent * event)	Q_DECL_OVERRIDE;
@@ -59,6 +63,7 @@ private:
 
 
 	QTimer timer;
+	QOpenGLDebugLogger * logger{};
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> current_time;
 

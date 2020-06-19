@@ -97,7 +97,9 @@ public:
 private:
 	void Prepare(GLViewWidget*);
 	void CreateDefaultArrays(GLViewWidget* gl);
+
 	void CreateIdBuffer(GLViewWidget* gl);
+	void CreateTriangleStripIndicies(GLViewWidget* gl);
 
 	RenderData GetRenderData(int frame);
 	void RenderSheetBackdrop(GLViewWidget * gl, RenderData const& frame);
@@ -127,7 +129,7 @@ private:
 
 	uint32_t     m_vao{};
 	uint32_t     m_vbo[VBOc]{};
-	uint32_t     m_vboFlags{0};
+	uint32_t     m_vboFlags{0xFF};
 };
 
 #endif // MATERIAL_H

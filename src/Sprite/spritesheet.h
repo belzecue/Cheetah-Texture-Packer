@@ -10,6 +10,12 @@ class RenderData;
 class SpriteSheet
 {
 public:
+	template<typename T, glm::qualifier Q>
+	static glm::vec<2, T, Q> GetCenter(glm::vec<4, T, Q> & p)
+	{
+		return glm::vec<2, T, Q>((p.x + p.z) / 2, (p.y + p.w) / 2);
+	}
+
 	SpriteSheet() = default;
 	~SpriteSheet();
 

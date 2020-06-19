@@ -20,6 +20,7 @@
 #include <chrono>
 #include <iostream>
 #include <cassert>
+#include <QOpenGLDebugLogger>
 
 struct Matrices
 {
@@ -112,7 +113,6 @@ void GLViewWidget::initializeGL()
 		QOpenGLFunctions_3_3_Core::initializeOpenGLFunctions();
 	}
 
-
     glClearColor(0, 0, 0, 1);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -128,8 +128,89 @@ void GLViewWidget::initializeGL()
 	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAX_LEVEL, 0);
 
-	glAssert();
+	logger = new QOpenGLDebugLogger(this);
+	logger->initialize();
 
+	connect(logger, &QOpenGLDebugLogger::messageLogged, this, &GLViewWidget::handleLoggedMessage);
+    logger->startLogging();
+
+	glAssert();
+}
+
+typedef std::pair<int, const char*> Flag;
+
+#define FlagDef(x) { QOpenGLDebugMessage:: x, #x }
+const static Flag g_Source[] =
+{
+FlagDef(InvalidSource),
+FlagDef(APISource),
+FlagDef(WindowSystemSource),
+FlagDef(ShaderCompilerSource),
+FlagDef(ThirdPartySource),
+FlagDef(ApplicationSource),
+FlagDef(OtherSource),
+{0, nullptr}
+};
+
+const static Flag g_Type[] =
+{
+FlagDef(InvalidType),
+FlagDef(ErrorType),
+FlagDef(DeprecatedBehaviorType),
+FlagDef(UndefinedBehaviorType),
+FlagDef(PortabilityType),
+FlagDef(PerformanceType),
+FlagDef(OtherType),
+FlagDef(MarkerType),
+FlagDef(GroupPushType),
+FlagDef(GroupPopType),
+{0, nullptr}
+};
+
+const static Flag g_Severity[] =
+{
+FlagDef(InvalidSeverity),
+FlagDef(HighSeverity),
+FlagDef(MediumSeverity),
+FlagDef(LowSeverity),
+FlagDef(NotificationSeverity),
+{0, nullptr}
+};
+
+std::string OutputFlags(uint32_t flag, Flag const* txt)
+{
+	std::string outs;
+
+	for(auto itr = txt; itr->second != nullptr; ++itr)
+	{
+		if(itr->first & flag)
+		{
+			if(outs.size())
+				outs += "|";
+
+			outs += itr->second;
+		}
+	}
+
+	if(outs.empty())
+	{
+		outs = txt->second;
+	}
+
+	return outs;
+}
+
+void GLViewWidget::handleLoggedMessage(QOpenGLDebugMessage const& debugMessage)
+{
+	if(debugMessage.severity() == QOpenGLDebugMessage::NotificationSeverity)
+		return;
+
+	std::cerr << "Source  : " << OutputFlags(debugMessage.source(),   g_Source)   << std::endl;
+	std::cerr << "Type    : " << OutputFlags(debugMessage.type(),     g_Type)     << std::endl;
+	std::cerr << "Severity: " << OutputFlags(debugMessage.severity(), g_Severity) << std::endl;
+	std::cerr << "Id      : " << debugMessage.id() << std::endl;
+	std::cerr << "Message : " << debugMessage.message().toStdString() << std::endl;
+	std::cerr << std::endl;
 }
 
 #if 0
