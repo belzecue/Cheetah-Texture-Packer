@@ -5,40 +5,15 @@
 #include "src/widgets/glviewwidget.h"
 #include <iostream>
 
-#define SHADER(k) "#version 150\n" #k
-static const char * kVert();
 static const char * kFrag();
 
 gltfMetallicRoughness gltfMetallicRoughness::Shader;
 
 void gltfMetallicRoughness::construct(GLViewWidget* gl)
 {
-static const char tex_template[] = "a_texCoord_";
-
-    compile(gl, kVert(), GL_VERTEX_SHADER);
+    compile(gl, GenericVert(), GL_VERTEX_SHADER);
     tryLoad(gl, kFrag(), GL_FRAGMENT_SHADER);
-    attribute(gl, 0, "a_vertex");
-	attribute(gl, 1, "a_id");
-
-	{
-		char buffer[sizeof(tex_template)];
-		strncpy(buffer, tex_template, sizeof(buffer));
-
-		for(int i = 0; i < 8; ++i)
-		{
-			buffer[sizeof(buffer)-2] = '0' + i;
-
-			std::cerr << buffer << std::endl;
-
-			attribute(gl, i+2, buffer);
-		}
-	}
-
-    link(gl);
-
-	uniform(gl, u_object,          "u_object");
-	uniform(gl, u_centers,         "u_centers");
-	uniform(gl, u_layer,           "u_layer");
+	GenericLink(gl);
 
 	uniform(gl, u_normal,          "u_normal");
 	uniform(gl, u_occlusion,       "u_occlusion");
@@ -80,7 +55,7 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 	_gl glBindTexture(GL_TEXTURE_BUFFER, 0);
 
 	_gl glUniform1f(u_layer , 0);
-	_gl glUniform1i(u_centers, 10);
+	_gl glUniform1i(u_boundingBoxes, 10);
 
 	_gl glUniform1i( u_diffuse, 0);
 	_gl glUniform1i( u_normal, 1);
@@ -129,63 +104,6 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 	_gl glUniform3fv(u_emissionFactor, 1, &material->emissiveFactor[0]);
 
     _gl glAssert();
-}
-
-static const char * kVert()
-{
-	return SHADER(
-		layout(std140) uniform Matrices
-		{
-			mat4  u_projection;
-			mat4  u_modelview;
-			ivec4 u_screenSize;
-			 vec4 u_cursorColor;
-			float u_time;
-		};
-
-		uniform mat4  u_object;
-		uniform float u_layer;
-		uniform isamplerBuffer u_centers;
-		uniform ivec4 u_texCoords;
-
-		in vec2 a_vertex;
-		in vec2 a_center;
-		in vec4 a_texCoord0;
-		in vec2 a_texCoord1;
-		in vec2 a_texCoord2;
-		in vec2 a_texCoord3;
-		in vec2 a_texCoord4;
-		in vec2 a_texCoord5;
-		in vec2 a_texCoord6;
-		in vec2 a_texCoord7;
-
-		in int  a_id;
-
-		out vec3 v_position;
-		out vec4 v_texCoord0;
-		out vec4 v_sprCoord1;
-
-		void main()
-		{
-			vec2 pos    = a_vertex - texelFetch(u_centers, a_id).rg;
-			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, 0, 1.0)));
-			v_position  = gl_Position.xyz;
-
-			vec2 texCoord[9] = vec2[9](
-				v_texCoord0.xy,
-				v_texCoord0.wz,
-				v_texCoord1.xy,
-				v_texCoord2.xy,
-				v_texCoord3.xy,
-				v_texCoord4.xy,
-				v_texCoord5.xy,
-				v_texCoord6.xy,
-				v_texCoord7.xy,
-			);
-
-			v_texCoord0 = glm::vec4(texCoord[u_texCoords[0] % 9], texCoord[u_texCoords[1] % 9]);
-			v_texCoord1 = glm::vec4(texCoord[u_texCoords[2] % 9], texCoord[u_texCoords[3] % 9]);
-		});
 }
 
 static const char * kFrag()

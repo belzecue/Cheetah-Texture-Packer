@@ -3,25 +3,17 @@
 #include <glm/vec4.hpp>
 #include "src/widgets/glviewwidget.h"
 
-#define SHADER(k) "#version 150\n" #k
-static const char * kVert();
 static const char * kFrag();
 
 BlitShader BlitShader::Shader;
 
 void BlitShader::construct(GLViewWidget* gl)
 {
-    compile(gl, kVert(), GL_VERTEX_SHADER);
+    compile(gl, GenericVert(), GL_VERTEX_SHADER);
     compile(gl, kFrag(), GL_FRAGMENT_SHADER);
-    attribute(gl, 0, "a_vertex");
-	attribute(gl, 1, "a_id");
-    attribute(gl, 2, "a_uv");
-    link(gl);
+	GenericLink(gl);
 
 	uniform(gl, u_texture, "u_texture");
-	uniform(gl, u_layer,   "u_layer");
-	uniform(gl, u_centers,  "u_centers");
-	uniform(gl, u_object,  "u_object");
 	uniform(gl, u_color,   "u_color");
 	uniform(gl, u_useColor,"u_useColor");
 
@@ -53,8 +45,9 @@ void BlitShader::bind(GLViewWidget* gl, Material * )
 
 	_gl glActiveTexture(GL_TEXTURE0);
 	_gl glUniform1i(u_texture, 0);
-	_gl glUniform1i(u_centers, 10);
+	_gl glUniform1i(u_boundingBoxes, 10);
 	_gl glUniform1f(u_layer , 0);
+
 	_gl glUniform1f(u_useColor , 0);
 	_gl glUniform4f(u_color, 0, 0, 0, 0);
 
@@ -77,39 +70,6 @@ void BlitShader::bindColor(GLViewWidget* gl, glm::vec4 color)
 void BlitShader::clearColor(GLViewWidget* gl)
 {
 	_gl glUniform1f(u_useColor, 0.f);
-}
-
-
-
-static const char * kVert()
-{
-	return SHADER(
-		layout(std140) uniform Matrices
-		{
-			mat4  u_projection;
-			mat4  u_camera;
-			ivec4 u_screenSize;
-			 vec4 u_cursorColor;
-			float u_time;
-		};
-
-		uniform mat4  u_object;
-		uniform float u_layer;
-		uniform isamplerBuffer u_centers;
-
-	//	in int gl_VertexID;
-		in vec2 a_vertex;
-		in vec2 a_uv;
-		in int  a_id;
-
-		out vec2 v_uv;
-
-		void main()
-		{
-			vec2 pos = a_vertex + texelFetch(u_centers, a_id).rg;
-			gl_Position = u_projection * (u_camera * (u_object * vec4(pos, 0, 1.0)));
-			v_uv        = a_uv;
-		});
 }
 
 static const char * kFrag()

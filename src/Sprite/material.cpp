@@ -194,6 +194,12 @@ void Material::CreateIdBuffer(GLViewWidget* gl)
 	_gl glBufferData(GL_ARRAY_BUFFER, array.size() * sizeof(array[0]), &array[0], GL_DYNAMIC_DRAW); DEBUG_GL
 }
 
+void Material::CreatePositionsFromNormalizedPositions(GLViewWidget * gl)
+{
+
+
+}
+
 void Material::Prepare(GLViewWidget* gl)
 {
 	if(!m_vao)
@@ -325,11 +331,13 @@ void Material::RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, in
 
 	BlitShader::Shader.bind(gl, this);
 	if(!db.center) m_spriteSheet->BindCenters(gl, GL_TEXTURE10);
+	m_spriteSheet->BindBoundingBoxes(gl, GL_TEXTURE11);
+
 	BlitShader::Shader.bindMatrix(gl, db.matrix);
 
 	BlitShader::Shader.bindLayer(gl, 8);
 	BlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1)); DEBUG_GL
-	_gl glDisable(GL_BLEND);
+	_gl glDisable(GL_DEPTH_TEST);
 	_gl glDrawElements(GL_TRIANGLES, db.elements, GL_UNSIGNED_SHORT, db.offset());
 
 }
@@ -363,5 +371,5 @@ void Material::RenderSheetBackdrop(GLViewWidget * gl, RenderData const& db)
 		m_spriteSheet.reset(new SpriteSheet());
 
 	m_spriteSheet->Prepare(gl, m_sprites, m_sheetSize);
-//	m_spriteSheet->RenderSheet(gl, db);
+	m_spriteSheet->RenderSheet(gl, db);
 }

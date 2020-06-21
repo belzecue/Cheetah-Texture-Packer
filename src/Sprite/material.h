@@ -99,7 +99,7 @@ private:
 	void CreateDefaultArrays(GLViewWidget* gl);
 
 	void CreateIdBuffer(GLViewWidget* gl);
-	void CreateTriangleStripIndicies(GLViewWidget* gl);
+	void CreatePositionsFromNormalizedPositions(GLViewWidget * gl);
 
 	RenderData GetRenderData(int frame);
 	void RenderSheetBackdrop(GLViewWidget * gl, RenderData const& frame);
