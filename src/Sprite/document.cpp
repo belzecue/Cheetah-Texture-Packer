@@ -4,7 +4,7 @@
 #include "ui_mainwindow.h"
 #include "widgets/glviewwidget.h"
 #include "Shaders/transparencyshader.h"
-#include "Shaders/blitshader.h"
+#include "Shaders/unlitshader.h"
 #include "Shaders/gltfmetallicroughness.h"
 #include "Shaders/defaultvaos.h"
 #include <glm/gtc/matrix_transform.hpp>

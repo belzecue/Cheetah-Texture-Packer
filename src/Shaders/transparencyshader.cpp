@@ -10,9 +10,9 @@ TransparencyShader TransparencyShader::Shader;
 
 void TransparencyShader::construct(GLViewWidget* gl)
 {
-    compile(gl, GenericVert(), GL_VERTEX_SHADER);
+    compile(gl, SheetVert(), GL_VERTEX_SHADER);
     compile(gl, kFrag(), GL_FRAGMENT_SHADER);
-	GenericLink(gl);
+	SheetLink(gl);
 
 	glDefaultVAOs::AddRef();
 }
@@ -35,7 +35,7 @@ void TransparencyShader::bind(GLViewWidget* gl, Material *)
         _gl glDisable(GL_CULL_FACE);
 	}
 
-	_gl glUniform1i(u_boundingBoxes, 10);
+	_gl glUniform1i(u_bufferTexture, 10);
 	_gl glUniform1f(u_layer , 0);
 
 	_gl glActiveTexture(GL_TEXTURE10);

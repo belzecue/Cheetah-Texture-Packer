@@ -5,10 +5,10 @@
 #include <glm/mat4x4.hpp>
 #include <atomic>
 
-class BlitShader : public SpriteShaderBase
+class UnlitShader : public SpriteShaderBase
 {
 public:
-static BlitShader Shader;
+static UnlitShader Shader;
     void bind(GLViewWidget* gl, Material * material) override;
 
 	void bindTexture(GLViewWidget* gl, uint32_t);

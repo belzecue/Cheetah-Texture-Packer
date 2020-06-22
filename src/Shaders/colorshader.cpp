@@ -1,17 +1,17 @@
-#include "blitshader.h"
+#include "colorshader.h"
 #include "defaultvaos.h"
 #include <glm/vec4.hpp>
 #include "src/widgets/glviewwidget.h"
 
 static const char * kFrag();
 
-BlitShader BlitShader::Shader;
+ColorShader ColorShader::Shader;
 
-void BlitShader::construct(GLViewWidget* gl)
+void ColorShader::construct(GLViewWidget* gl)
 {
-    compile(gl, GenericVert(), GL_VERTEX_SHADER);
+    compile(gl, SheetVert(), GL_VERTEX_SHADER);
     compile(gl, kFrag(), GL_FRAGMENT_SHADER);
-	GenericLink(gl);
+	SheetLink(gl);
 
 	uniform(gl, u_texture, "u_texture");
 	uniform(gl, u_color,   "u_color");
@@ -21,13 +21,13 @@ void BlitShader::construct(GLViewWidget* gl)
 	glDefaultVAOs::AddRef();
 }
 
-void BlitShader::destruct(GLViewWidget* gl)
+void ColorShader::destruct(GLViewWidget* gl)
 {
 	_gl glAssert();
 	glDefaultVAOs::Release(gl);
 }
 
-void BlitShader::bind(GLViewWidget* gl, Material * )
+void ColorShader::bind(GLViewWidget* gl, Material * )
 {
     if(bindShader(gl))
 	{
@@ -45,7 +45,7 @@ void BlitShader::bind(GLViewWidget* gl, Material * )
 
 	_gl glActiveTexture(GL_TEXTURE0);
 	_gl glUniform1i(u_texture, 0);
-	_gl glUniform1i(u_boundingBoxes, 10);
+	_gl glUniform1i(u_bufferTexture, 10);
 	_gl glUniform1f(u_layer , 0);
 
 	_gl glUniform1f(u_useColor , 0);
@@ -56,18 +56,18 @@ void BlitShader::bind(GLViewWidget* gl, Material * )
     _gl glAssert();
 }
 
-void BlitShader::bindTexture(GLViewWidget* gl, uint32_t texture)
+void ColorShader::bindTexture(GLViewWidget* gl, uint32_t texture)
 {
 	_gl glBindTexture(GL_TEXTURE_2D, texture);
 }
 
-void BlitShader::bindColor(GLViewWidget* gl, glm::vec4 color)
+void ColorShader::bindColor(GLViewWidget* gl, glm::vec4 color)
 {
 	_gl glUniform4fv(u_color, 1, &color[0]);
 	_gl glUniform1f(u_useColor, 1.f);
 }
 
-void BlitShader::clearColor(GLViewWidget* gl)
+void ColorShader::clearColor(GLViewWidget* gl)
 {
 	_gl glUniform1f(u_useColor, 0.f);
 }
@@ -79,13 +79,15 @@ static const char * kFrag()
 		uniform vec4      u_color;
 		uniform float     u_useColor;
 
-		in vec2 v_uv;
+		in vec2 v_position;
+		in vec4 v_texCoord0;
+		in vec4 v_texCoord1;
 
 		out vec4 frag_color;
 
 		void main()
 		{
-			frag_color = mix(texture(u_texture, v_uv), u_color, u_useColor);
+			frag_color = mix(texture(u_texture, v_texCoord0.xy), u_color, u_useColor);
 		});
 }
 

@@ -4,6 +4,61 @@
 #include "defaulttextures.h"
 #include <iostream>
 
+void SpriteShaderBase::SpriteLink(GLViewWidget * gl)
+{
+	static const char tex_template[] = "a_texCoord_";
+
+	attribute(gl, 0, "a_vertex");
+	attribute(gl, 1, "a_id");
+
+	{
+		char buffer[sizeof(tex_template)];
+		strncpy(buffer, tex_template, sizeof(buffer));
+
+		for(int i = 0; i < 8; ++i)
+		{
+			buffer[sizeof(buffer)-2] = '0' + i;
+			attribute(gl, i+2, buffer);
+		}
+	}
+
+	link(gl);
+	uniformBlock(gl, 0, "Matrices");
+
+	uniform(gl, u_object,    "u_object");
+	uniform(gl, u_layer,     "u_layer");
+	uniform(gl, u_center,    "u_center");
+	uniform(gl, u_texCoords, "u_texCoords");
+	uniform(gl, u_bufferTexture,"u_bufferTexture");
+}
+
+void SpriteShaderBase::SheetLink(GLViewWidget * gl)
+{
+	attribute(gl, 0, "a_vertex");
+	attribute(gl, 1, "a_id");
+	attribute(gl, 2, "v_texCoord0");
+	attribute(gl, 3, "v_texCoord1");
+
+	link(gl);
+	uniformBlock(gl, 0, "Matrices");
+
+	uniform(gl, u_object,    "u_object");
+	uniform(gl, u_layer,     "u_layer");
+	uniform(gl, u_center,    "u_center");
+	uniform(gl, u_texCoords, "u_texCoords");
+	uniform(gl, u_bufferTexture,"u_bufferTexture");
+}
+
+void SpriteShaderBase::bindTexCoords(GLViewWidget * gl, glm::ivec4 v)
+{
+	_gl glUniform4i(u_layer, v.x, v.y, v.z, v.w);
+}
+
+void SpriteShaderBase::bindTexCoords(GLViewWidget * gl, int v)
+{
+	_gl glUniform4i(u_layer, v, v, v, v);
+}
+
 void SpriteShaderBase::bindLayer(GLViewWidget* gl, int layer)
 {
 	float l = layer / (float) UCHAR_MAX;
@@ -13,6 +68,11 @@ void SpriteShaderBase::bindLayer(GLViewWidget* gl, int layer)
 void SpriteShaderBase::bindMatrix(GLViewWidget* gl, glm::mat4x4 const& matrix)
 {
 	_gl glUniformMatrix4fv(u_object, 1, GL_FALSE, &matrix[0][0]);
+}
+
+void SpriteShaderBase::bindCenter(GLViewWidget* gl, bool value)
+{
+	_gl glUniform1f(u_center, value);
 }
 
 void SpriteShaderBase::bindTextures(GLViewWidget* gl, Material * material)
@@ -67,34 +127,8 @@ void SpriteShaderBase::bindTextures(GLViewWidget* gl, Material * material)
 		_gl glBindTexture(GL_TEXTURE_2D, DefaultTextures::Get().GetWhiteTexture(gl));
 }
 
-void SpriteShaderBase::GenericLink(GLViewWidget * gl)
-{
-	static const char tex_template[] = "a_texCoord_";
 
-	attribute(gl, 0, "a_vertex");
-	attribute(gl, 1, "a_id");
-
-	{
-		char buffer[sizeof(tex_template)];
-		strncpy(buffer, tex_template, sizeof(buffer));
-
-		for(int i = 0; i < 8; ++i)
-		{
-			buffer[sizeof(buffer)-2] = '0' + i;
-			attribute(gl, i+2, buffer);
-		}
-	}
-
-	link(gl);
-	uniformBlock(gl, 0, "Matrices");
-
-	uniform(gl, u_object,    "u_object");
-	uniform(gl, u_layer,     "u_layer");
-	uniform(gl, u_texCoords, "u_texCoords");
-	uniform(gl, u_boundingBoxes,"u_boundingBoxes");
-}
-
-const char * SpriteShaderBase::GenericVert()
+const char * SpriteShaderBase::SpriteVert()
 {
 	return SHADER(
 		layout(std140) uniform Matrices
@@ -109,7 +143,8 @@ const char * SpriteShaderBase::GenericVert()
 		uniform mat4  u_object;
 		uniform float u_layer;
 		uniform ivec4 u_texCoords;
-		uniform isamplerBuffer u_boundingBoxes;
+		uniform float u_center;
+		uniform isamplerBuffer u_bufferTexture;
 
 		in vec2 a_vertex;
 		in int  a_id;
@@ -128,12 +163,12 @@ const char * SpriteShaderBase::GenericVert()
 
 		void main()
 		{
-			vec4 bounds = texelFetch(u_boundingBoxes, a_id);
+			vec4 bounds = texelFetch(u_bufferTexture, a_id);
 			vec2 center = (bounds.xy + bounds.zw) / 2;
-			bounds = bounds - vec4(center, center);
+			bounds = bounds; // - vec4(center, center);
 
-			vec2 pos    = mix(bounds.xy, bounds.zw, (a_vertex + 1) / 2);
-			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, 0, 1.0)));
+			vec2 pos    = mix(bounds.xy, bounds.zw, (a_vertex + 1) / 2); //+ center * u_center;
+			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, u_layer, 1.0)));
 			v_position  = gl_Position.xy;
 
 			vec2 texCoord[9] = vec2[9](
@@ -150,6 +185,44 @@ const char * SpriteShaderBase::GenericVert()
 
 			v_texCoord0 = vec4(texCoord[u_texCoords[0] % 9], texCoord[u_texCoords[1] % 9]);
 			v_texCoord1 = vec4(texCoord[u_texCoords[2] % 9], texCoord[u_texCoords[3] % 9]);
+		});
+
+}
+
+
+const char * SpriteShaderBase::SheetVert()
+{
+	return SHADER(
+		layout(std140) uniform Matrices
+		{
+			mat4  u_projection;
+			mat4  u_modelview;
+			ivec4 u_screenSize;
+			 vec4 u_cursorColor;
+			float u_time;
+		};
+
+		uniform mat4  u_object;
+		uniform float u_layer;
+		uniform ivec4 u_texCoords;
+		uniform isamplerBuffer u_bufferTexture;
+
+		in vec2 a_vertex;
+		in int  a_id;
+		in vec2 a_texCoord0;
+
+		out vec2 v_position;
+		out vec4 v_texCoord0;
+		out vec4 v_texCoord1;
+
+		void main()
+		{
+			vec2 pos    = a_vertex + texelFetch(u_bufferTexture, a_id).rg;
+			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, u_layer, 1.0)));
+			v_position  = gl_Position.xy;
+
+			v_texCoord0 = vec4(a_texCoord0, a_texCoord0);
+			v_texCoord1 = vec4(a_texCoord0, a_texCoord0);
 		});
 
 }

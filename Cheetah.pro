@@ -50,13 +50,14 @@ SOURCES += src/main.cpp\
 	../../../Libraries/fx-gltf/src/bufferinfo.cpp \
 	../../../Libraries/fx-gltf/src/fx/gltf.cpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.cpp \
-	src/Shaders/blitshader.cpp \
+	src/Shaders/colorshader.cpp \
 	src/Shaders/defaulttextures.cpp \
 	src/Shaders/defaultvaos.cpp \
 	src/Shaders/glprogram.cpp \
 	src/Shaders/gltfmetallicroughness.cpp \
 	src/Shaders/spriteshaderbase.cpp \
 	src/Shaders/transparencyshader.cpp \
+	src/Shaders/unlitshader.cpp \
 	src/Shaders/velvetshader.cpp \
 	src/Sprite/animation.cpp \
 	src/Sprite/document.cpp \
@@ -119,13 +120,14 @@ HEADERS  += src/mainwindow.h \
 	../../../Libraries/fx-gltf/src/fx/gltf.h \
 	../../../Libraries/fx-gltf/src/fx/gltf_forward.hpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.h \
-	src/Shaders/blitshader.h \
+	src/Shaders/colorshader.h \
 	src/Shaders/defaulttextures.h \
 	src/Shaders/defaultvaos.h \
 	src/Shaders/glprogram.h \
 	src/Shaders/gltfmetallicroughness.h \
 	src/Shaders/spriteshaderbase.h \
 	src/Shaders/transparencyshader.h \
+	src/Shaders/unlitshader.h \
 	src/Shaders/velvetshader.h \
 	src/Sprite/animation.h \
 	src/Sprite/document.h \

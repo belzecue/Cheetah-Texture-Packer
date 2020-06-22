@@ -2,7 +2,7 @@
 #include "Support/imagesupport.h"
 #include "Shaders/defaultvaos.h"
 #include "Shaders/transparencyshader.h"
-#include "Shaders/blitshader.h"
+#include "Shaders/unlitshader.h"
 #include <glm/glm.hpp>
 #include <fx/gltf.h>
 #include <cctype>
@@ -45,7 +45,7 @@ Image::Image(ImageManager * manager, counted_string const& path, counted_string 
 {
 	glDefaultVAOs::AddRef();
 	TransparencyShader::Shader.AddRef();
-	BlitShader::Shader.AddRef();
+	UnlitShader::Shader.AddRef();
 
 //	memset(m_vao, 0, sizeof(m_vao));
 //	memset(m_vbo, 0, sizeof(m_vbo));
@@ -61,7 +61,7 @@ Image::~Image()
 
 	glDefaultVAOs::Release(m_manager->gl);
 	TransparencyShader::Shader.Release(m_manager->gl);
-	BlitShader::Shader.Release(m_manager->gl);
+	UnlitShader::Shader.Release(m_manager->gl);
 }
 
 void Image::LoadFromFile()

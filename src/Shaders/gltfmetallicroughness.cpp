@@ -11,9 +11,9 @@ gltfMetallicRoughness gltfMetallicRoughness::Shader;
 
 void gltfMetallicRoughness::construct(GLViewWidget* gl)
 {
-    compile(gl, GenericVert(), GL_VERTEX_SHADER);
+    compile(gl, SpriteVert(), GL_VERTEX_SHADER);
     tryLoad(gl, kFrag(), GL_FRAGMENT_SHADER);
-	GenericLink(gl);
+	SpriteLink(gl);
 
 	uniform(gl, u_normal,          "u_normal");
 	uniform(gl, u_occlusion,       "u_occlusion");
@@ -55,7 +55,7 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 	_gl glBindTexture(GL_TEXTURE_BUFFER, 0);
 
 	_gl glUniform1f(u_layer , 0);
-	_gl glUniform1i(u_boundingBoxes, 10);
+	_gl glUniform1i(u_bufferTexture, 10);
 
 	_gl glUniform1i( u_diffuse, 0);
 	_gl glUniform1i( u_normal, 1);

@@ -1,7 +1,7 @@
 #include "spritesheet.h"
 #include "material.h"
 #include "Shaders/transparencyshader.h"
-#include "Shaders/blitshader.h"
+#include "Shaders/colorshader.h"
 #include "Shaders/defaultvaos.h"
 #include "Support/vectoroperations.hpp"
 #include "src/widgets/glviewwidget.h"
@@ -19,6 +19,9 @@ void SpriteSheet::Clear(GLViewWidget* gl)
 {
 	if(m_vao[0] == 0)
 		return;
+
+	TransparencyShader::Shader.Release(gl);
+	ColorShader::Shader.Release(gl);
 
 	_gl glDeleteVertexArrays(VAOc, m_vao);
 	_gl glDeleteBuffers(VBOc, m_vbo);
@@ -68,6 +71,9 @@ void SpriteSheet::Prepare(GLViewWidget* gl, CountedSizedArray<glm::i16vec4> & sp
 
 	if(!m_vao[0])
 	{
+		TransparencyShader::Shader.AddRef();
+		ColorShader::Shader.AddRef();
+
 		_gl glGenVertexArrays(VAOc, m_vao);	DEBUG_GL;
 		_gl glGenBuffers(VBOc, m_vbo);	DEBUG_GL;
 		_gl glGenTextures(TEXc,   m_texture);	DEBUG_GL;
@@ -195,20 +201,20 @@ void SpriteSheet::RenderSheet(GLViewWidget * gl, RenderData db)
 	}
 
 //draw sprites boxes
-	BlitShader::Shader.bind(gl, nullptr);
+	ColorShader::Shader.bind(gl, nullptr);
 	if(!db.center) BindCenters(gl, GL_TEXTURE10);
-	BlitShader::Shader.bindMatrix(gl, db.matrix);
+	ColorShader::Shader.bindMatrix(gl, db.matrix);
 
-	BlitShader::Shader.bindLayer(gl, 3);
-	BlitShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 0)); DEBUG_GL
+	ColorShader::Shader.bindLayer(gl, 3);
+	ColorShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 0)); DEBUG_GL
 
 	_gl glDrawElements(GL_TRIANGLES, elements, GL_UNSIGNED_SHORT, offset); DEBUG_GL
 
 //draw sprite outlines
 	if(db.frame < 0)
 	{
-		BlitShader::Shader.bindLayer(gl, 2);
-		BlitShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 1));
+		ColorShader::Shader.bindLayer(gl, 2);
+		ColorShader::Shader.bindColor(gl, glm::vec4(0, 0, 0, 1));
 		_gl glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);GL_ASSERT;
 	}
 

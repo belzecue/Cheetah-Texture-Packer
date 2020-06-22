@@ -4,7 +4,7 @@
 #include "Shaders/defaultvaos.h"
 #include "Shaders/gltfmetallicroughness.h"
 #include "Shaders/transparencyshader.h"
-#include "Shaders/blitshader.h"
+#include "Shaders/unlitshader.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "spritesheet.h"
 
@@ -20,7 +20,6 @@ Material::Material()
 	normalTexture.texCoord    = 2 + (int)Tex::Normal;
 	occlusionTexture.texCoord = 2 + (int)Tex::Occlusion;
 	emissiveTexture.texCoord  = 2 + (int)Tex::Emission;
-
 }
 
 void Material::Clear(GLViewWidget * gl)
@@ -253,6 +252,7 @@ void Material::Prepare(GLViewWidget* gl)
 			{
 				_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_sheetCoordBegin+i]);
 				_gl glBufferData(GL_ARRAY_BUFFER, m_normalizedPositions.size() * sizeof(glm::vec2), nullptr, GL_DYNAMIC_DRAW);
+				continue;
 			}
 
 			std::vector<glm::vec2> coords(m_normalizedPositions.size());
@@ -326,17 +326,20 @@ void Material::RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, in
 	Prepare(gl);
 	auto db = GetRenderData(frame);
 	RenderSheetBackdrop(gl, db);
+	return;
 
 	_gl glBindVertexArray(m_vao);
 
-	BlitShader::Shader.bind(gl, this);
+	UnlitShader::Shader.bind(gl, this);
 	if(!db.center) m_spriteSheet->BindCenters(gl, GL_TEXTURE10);
 	m_spriteSheet->BindBoundingBoxes(gl, GL_TEXTURE11);
 
-	BlitShader::Shader.bindMatrix(gl, db.matrix);
+	UnlitShader::Shader.bindMatrix(gl, db.matrix);
 
-	BlitShader::Shader.bindLayer(gl, 8);
-	BlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1)); DEBUG_GL
+	UnlitShader::Shader.bindLayer(gl, 8);
+	UnlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1)); DEBUG_GL
+	UnlitShader::Shader.bindTexCoords(gl, TexCoord(image_slot)); DEBUG_GL
+
 	_gl glDisable(GL_DEPTH_TEST);
 	_gl glDrawElements(GL_TRIANGLES, db.elements, GL_UNSIGNED_SHORT, db.offset());
 
