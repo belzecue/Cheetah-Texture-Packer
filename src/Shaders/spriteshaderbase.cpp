@@ -51,12 +51,12 @@ void SpriteShaderBase::SheetLink(GLViewWidget * gl)
 
 void SpriteShaderBase::bindTexCoords(GLViewWidget * gl, glm::ivec4 v)
 {
-	_gl glUniform4i(u_layer, v.x, v.y, v.z, v.w);
+	_gl glUniform4i(u_texCoords, v.x, v.y, v.z, v.w);
 }
 
 void SpriteShaderBase::bindTexCoords(GLViewWidget * gl, int v)
 {
-	_gl glUniform4i(u_layer, v, v, v, v);
+	_gl glUniform4i(u_texCoords, v, v, v, v);
 }
 
 void SpriteShaderBase::bindLayer(GLViewWidget* gl, int layer)
@@ -143,7 +143,6 @@ const char * SpriteShaderBase::SpriteVert()
 		uniform mat4  u_object;
 		uniform float u_layer;
 		uniform ivec4 u_texCoords;
-		uniform float u_center;
 		uniform isamplerBuffer u_bufferTexture;
 
 		in vec2 a_vertex;
@@ -163,12 +162,11 @@ const char * SpriteShaderBase::SpriteVert()
 
 		void main()
 		{
-			vec4 bounds = texelFetch(u_bufferTexture, a_id);
-			vec2 center = (bounds.xy + bounds.zw) / 2;
-			bounds = bounds; // - vec4(center, center);
+			vec4 box    = texelFetch(u_bufferTexture, a_id);
+			vec2 size   = box.zw - box.xy;
 
-			vec2 pos    = mix(bounds.xy, bounds.zw, (a_vertex + 1) / 2); //+ center * u_center;
-			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, u_layer, 1.0)));
+			vec2 pos    = box.xy + size * (1 + a_vertex) * .5;
+			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, 0, 1.0)));
 			v_position  = gl_Position.xy;
 
 			vec2 texCoord[9] = vec2[9](

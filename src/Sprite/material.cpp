@@ -124,10 +124,22 @@ void Material::CreateDefaultArrays(GLViewWidget* gl)
 
 	for(uint32_t i = 0; i < m_spriteCount; ++i)
 	{
+#if 1
+		glm::vec2 center = SpriteSheet::GetCenter(m_sprites[i]);
+		glm::vec4 sprite = glm::vec4(m_sprites[i]) - glm::vec4(center, center);
+		glm::vec4 crop   = glm::vec4(m_crop   [i]) - glm::vec4(center, center);
+		glm::vec4 result = crop / glm::abs(sprite);
+
+		m_normalizedPositions[i*4+0] = glm::vec2(result.x, result.y);
+		m_normalizedPositions[i*4+1] = glm::vec2(result.z, result.y);
+		m_normalizedPositions[i*4+2] = glm::vec2(result.z, result.w);
+		m_normalizedPositions[i*4+3] = glm::vec2(result.x, result.w);
+#else
 		m_normalizedPositions[i*4+0] = glm::vec2(-1.f,  1.f);
 		m_normalizedPositions[i*4+1] = glm::vec2( 1.f,  1.f);
 		m_normalizedPositions[i*4+2] = glm::vec2( 1.f, -1.f);
 		m_normalizedPositions[i*4+3] = glm::vec2(-1.f, -1.f);
+#endif
 	}
 
 	CreateIdBuffer(gl);
@@ -155,24 +167,8 @@ void Material::CreateDefaultArrays(GLViewWidget* gl)
 	_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::u16vec4), nullptr, GL_DYNAMIC_DRAW); DEBUG_GL
 
 //create positions
-
-	{
-		auto vec = CountedSizedArray<glm::i16vec2>(m_spriteCount * 4);
-
-		for(uint32_t i = 0; i < m_spriteCount; ++i)
-		{
-			glm::ivec2 center = SpriteSheet::GetCenter(m_sprites[i]);
-			glm::ivec4 crop = glm::ivec4(m_crop[i]) - glm::ivec4(center, center);
-
-			vec[i*4+0] = glm::i16vec2(crop.x, crop.y);
-			vec[i*4+1] = glm::i16vec2(crop.z, crop.y);
-			vec[i*4+2] = glm::i16vec2(crop.z, crop.w);
-			vec[i*4+3] = glm::i16vec2(crop.x, crop.w);
-		}
-
-		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_positions]); DEBUG_GL
-		_gl glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(vec[0]), &vec[0], GL_DYNAMIC_DRAW); DEBUG_GL
-	}
+	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_positions]); DEBUG_GL
+	_gl glBufferData(GL_ARRAY_BUFFER, m_normalizedPositions.size() * sizeof(m_normalizedPositions[0]), &m_normalizedPositions[0], GL_DYNAMIC_DRAW); DEBUG_GL
 }
 
 void Material::CreateIdBuffer(GLViewWidget* gl)
@@ -193,12 +189,6 @@ void Material::CreateIdBuffer(GLViewWidget* gl)
 	_gl glBufferData(GL_ARRAY_BUFFER, array.size() * sizeof(array[0]), &array[0], GL_DYNAMIC_DRAW); DEBUG_GL
 }
 
-void Material::CreatePositionsFromNormalizedPositions(GLViewWidget * gl)
-{
-
-
-}
-
 void Material::Prepare(GLViewWidget* gl)
 {
 	if(!m_vao)
@@ -211,7 +201,7 @@ void Material::Prepare(GLViewWidget* gl)
 		_gl glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[v_indices]);
 
 		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_positions]);
-		_gl glVertexAttribPointer(0, 2, GL_SHORT, GL_FALSE, 0, nullptr);
+		_gl glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_spriteId]);
 		_gl glVertexAttribIPointer(1, 1, GL_SHORT, 0, nullptr);
 
@@ -326,17 +316,17 @@ void Material::RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, in
 	Prepare(gl);
 	auto db = GetRenderData(frame);
 	RenderSheetBackdrop(gl, db);
-	return;
 
 	_gl glBindVertexArray(m_vao);
 
 	UnlitShader::Shader.bind(gl, this);
-	if(!db.center) m_spriteSheet->BindCenters(gl, GL_TEXTURE10);
-	m_spriteSheet->BindBoundingBoxes(gl, GL_TEXTURE11);
+	m_spriteSheet->BindBoundingBoxes(gl, GL_TEXTURE10);
 
 	UnlitShader::Shader.bindMatrix(gl, db.matrix);
 
 	UnlitShader::Shader.bindLayer(gl, 8);
+	UnlitShader::Shader.bindCenter(gl, db.center);
+
 	UnlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1)); DEBUG_GL
 	UnlitShader::Shader.bindTexCoords(gl, TexCoord(image_slot)); DEBUG_GL
 

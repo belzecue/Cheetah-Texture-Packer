@@ -87,7 +87,7 @@ static const char * kFrag()
 
 		void main()
 		{
-			frag_color = mix(texture(u_texture, v_texCoord0.xy), u_color, u_useColor);
+			frag_color = vec4(1, 0, 1, 1);
 		});
 }
 

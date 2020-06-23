@@ -16,6 +16,13 @@ public:
 		return glm::vec<2, T, Q>((p.x + p.z) / 2, (p.y + p.w) / 2);
 	}
 
+	template<typename T, glm::qualifier Q>
+	static glm::vec<2, T, Q> GetSize(glm::vec<4, T, Q> & p)
+	{
+		return glm::vec<2, T, Q>(p.z - p.x, p.w - p.y);
+	}
+
+
 	SpriteSheet() = default;
 	~SpriteSheet();
 
