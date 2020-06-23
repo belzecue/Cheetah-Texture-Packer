@@ -3,6 +3,7 @@
 #include <shared_mutex>
 #include <set>
 #include <cassert>
+#include <algorithm>
 //#include "json_detail.hpp"
 
 counted_string::handle counted_string::null_handle;
@@ -30,7 +31,7 @@ counted_string counted_string::Get(const char * string)
 
 counted_string counted_string::MakeUnique(const char * string)
 {
-	uint32_t length = strlen(string);
+    size_t length = (uint32_t)std::min<size_t>(INT_MAX, strlen(string));
 
 //we have 3 bytes of padding
 	counted_string::handle * tmp = new(malloc(sizeof(handle)+length)) counted_string::handle();
@@ -67,7 +68,7 @@ counted_string counted_string::MakeShared(const char * string)
 	if(r != &null_handle)
 		return counted_string(r);
 
-	uint32_t length = strlen(string);
+    uint32_t length = (uint32_t)std::min<size_t>(INT_MAX, strlen(string));
 
 //make string, we have 3 bytes of padding
 	counted_string::handle * tmp = new(malloc(sizeof(handle)+length)) counted_string::handle();

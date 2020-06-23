@@ -7,6 +7,7 @@
 #include "Shaders/unlitshader.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "spritesheet.h"
+#include <iostream>
 
 #define UNUSED(x) (void)x;
 
@@ -166,6 +167,13 @@ void Material::CreateDefaultArrays(GLViewWidget* gl)
 	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_texCoord]); DEBUG_GL
 	_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::u16vec4), nullptr, GL_DYNAMIC_DRAW); DEBUG_GL
 
+	for(uint32_t i = v_sheetCoordBegin; i < v_sheetCoordEnd; ++i)
+	{
+		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[i]); DEBUG_GL
+		_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::vec2), nullptr, GL_DYNAMIC_DRAW); DEBUG_GL
+
+	}
+
 //create positions
 	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_positions]); DEBUG_GL
 	_gl glBufferData(GL_ARRAY_BUFFER, m_normalizedPositions.size() * sizeof(m_normalizedPositions[0]), &m_normalizedPositions[0], GL_DYNAMIC_DRAW); DEBUG_GL
@@ -246,17 +254,19 @@ void Material::Prepare(GLViewWidget* gl)
 			}
 
 			std::vector<glm::vec2> coords(m_normalizedPositions.size());
+			memcpy(&coords[0], &m_normalizedPositions[0], sizeof(coords[0]) * coords.size());
 
-			for(uint32_t j = 0; j < m_normalizedPositions.size(); ++j)
+			glm::vec4 sheet_size = glm::vec4(image_slots[i]->GetSize(), image_slots[i]->GetSize());
+
+			for(auto & v : coords)
 			{
-				glm::vec2 pos = m_normalizedPositions[j];
-				pos.y *= -1;
-				coords[j] = (pos + 1.f) / 2.f;
+				v.y *= -1;
+				v = (v + 1.f) * .5f;
 			}
 
 			for(uint32_t j = 0; j < m_spriteCount; ++j)
 			{
-				auto square = image_slots[i]->m_sprites[j];
+				glm::vec4 square = glm::vec4(image_slots[i]->m_sprites[j]) / sheet_size;
 				auto pair   = m_spriteVertices[j];
 
 				for(uint32_t k = 0; k < pair.length; ++k)

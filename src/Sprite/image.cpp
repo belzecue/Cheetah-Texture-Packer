@@ -11,6 +11,8 @@
 
 #include "widgets/glviewwidget.h"
 
+#undef LoadImage
+
 std::mutex                       Image::g_mutex;
 
 counted_ptr<Image> Image::Factory(ImageManager * manager, std::string const& documentFilePath)

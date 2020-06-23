@@ -87,7 +87,7 @@ static const char * kFrag()
 
 		void main()
 		{
-			frag_color = vec4(1, 0, 1, 1);
+			frag_color = vec4(v_texCoord1.xy, 0, 1);
 		});
 }
 

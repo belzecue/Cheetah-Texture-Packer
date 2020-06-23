@@ -56,6 +56,13 @@ void SpriteShaderBase::bindTexCoords(GLViewWidget * gl, glm::ivec4 v)
 
 void SpriteShaderBase::bindTexCoords(GLViewWidget * gl, int v)
 {
+	static bool printed = false;
+	if(!printed)
+	{
+		printed = true;
+		std::cerr << "binding texCoord" << v << std::endl;
+	}
+
 	_gl glUniform4i(u_texCoords, v, v, v, v);
 }
 
@@ -181,8 +188,11 @@ const char * SpriteShaderBase::SpriteVert()
 				a_texCoord7.xy
 			);
 
-			v_texCoord0 = vec4(texCoord[u_texCoords[0] % 9], texCoord[u_texCoords[1] % 9]);
-			v_texCoord1 = vec4(texCoord[u_texCoords[2] % 9], texCoord[u_texCoords[3] % 9]);
+	//		v_texCoord0 = vec4(texCoord[u_texCoords[0] % 9], texCoord[u_texCoords[1] % 9]);
+	//		v_texCoord1 = vec4(texCoord[u_texCoords[2] % 9], texCoord[u_texCoords[3] % 9]);
+
+			v_texCoord0 = vec4(a_texCoord1.xy, a_texCoord1.xy);
+			v_texCoord1 = vec4(a_texCoord1.xy, a_texCoord1.xy);
 		});
 
 }
@@ -208,6 +218,7 @@ const char * SpriteShaderBase::SheetVert()
 		in vec2 a_vertex;
 		in int  a_id;
 		in vec2 a_texCoord0;
+		in vec2 a_texCoord1;
 
 		out vec2 v_position;
 		out vec4 v_texCoord0;
@@ -219,8 +230,8 @@ const char * SpriteShaderBase::SheetVert()
 			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, u_layer, 1.0)));
 			v_position  = gl_Position.xy;
 
-			v_texCoord0 = vec4(a_texCoord0, a_texCoord0);
-			v_texCoord1 = vec4(a_texCoord0, a_texCoord0);
+			v_texCoord0 = vec4(a_texCoord0, a_texCoord1);
+			v_texCoord1 = vec4(a_texCoord0, a_texCoord1);
 		});
 
 }

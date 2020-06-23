@@ -13,12 +13,12 @@ struct ImageMetadata
 
 	union
 	{
-		int id;
+        int id{};
 
 		struct
 		{
-			uint16_t imageId{};
-			uint16_t frameId{};
+            uint16_t imageId;
+            uint16_t frameId;
 		};
 	};
 

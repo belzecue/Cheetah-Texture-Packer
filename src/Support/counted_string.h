@@ -31,7 +31,8 @@ public:
 
 	void clear();
 
-	inline int  ptr_compare(counted_string const &in) const { return (intptr_t)m_string - (intptr_t)in.m_string; }
+    inline int  ptr_compare(counted_string const &in) const
+    { auto cmp = ((intptr_t)m_string - (intptr_t)in.m_string); return cmp < 0? -1 : cmp != 0; }
 
 	inline int  compare(counted_string const&in) const { return compare(in.c_str()); }
 	inline int  compare(std::string const&in) const { return compare(in.c_str()); }
