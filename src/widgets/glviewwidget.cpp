@@ -22,6 +22,8 @@
 #include <cassert>
 #include <QOpenGLDebugLogger>
 
+#include <GL/glu.h>
+
 struct Matrices
 {
 	glm::mat4  u_projection;

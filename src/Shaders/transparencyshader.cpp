@@ -23,7 +23,7 @@ void TransparencyShader::destruct(GLViewWidget* gl)
 	glDefaultVAOs::Release(gl);
 }
 
-void TransparencyShader::bind(GLViewWidget* gl, Material *)
+void TransparencyShader::bind2(GLViewWidget* gl, Material *)
 {
 	GL_ASSERT;
 

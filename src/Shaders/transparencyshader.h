@@ -10,7 +10,9 @@ class TransparencyShader : public SpriteShaderBase
 {
 public:
 static TransparencyShader Shader;
-    void bind(GLViewWidget* gl, Material *) override;
+    virtual ~TransparencyShader() = default;
+
+    void bind2(GLViewWidget* gl, Material *);
 
 private:
     void construct(GLViewWidget* gl) override;

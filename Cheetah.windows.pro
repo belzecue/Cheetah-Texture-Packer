@@ -22,9 +22,14 @@ INCLUDEPATH += src \
         ../../../Libraries/basis_universal/ \
         ../../../Libraries/glm/ \
 
-CONFIG += -gl32 c++14
+CONFIG += c++14
 
 DEFINES += GLM_EXT_INCLUDED \"_gl=gl->\"
+LIBS += -lglu32
+
+QMAKE_CXXFLAGS += -d2FH4-
+QMAKE_LFLAGS +=  -d2:-FH4-
+
 
 SOURCES += src/main.cpp\
 	../../../Libraries/basis_universal/apg_bmp.c \

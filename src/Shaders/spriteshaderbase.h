@@ -17,7 +17,7 @@ public:
 	static const char * SpriteVert();
 	static const char * SheetVert();
 
-	virtual void bind(GLViewWidget* gl, Material * material) = 0;
+    virtual void bind(GLViewWidget* gl, Material * material) = 0;
 
 	static void bindTextures(GLViewWidget* gl, Material * material);
 	void bindTexture(GLViewWidget* gl, Tex);

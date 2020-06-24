@@ -30,6 +30,7 @@ const char * g_WriteMimeTypes[] =
 ""
 };
 
+#undef LoadImage
 
 IO::Image IO::LoadImage(const char * path)
 {

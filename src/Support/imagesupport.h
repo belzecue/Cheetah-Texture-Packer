@@ -7,6 +7,8 @@
 #include <glm/vec2.hpp>
 #include <memory>
 
+#undef LoadImage
+
 class GLViewWidget;
 
 namespace basisu
