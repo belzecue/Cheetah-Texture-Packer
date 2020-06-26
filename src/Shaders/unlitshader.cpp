@@ -75,6 +75,15 @@ void UnlitShader::clearColor(GLViewWidget* gl)
 static const char * kFrag()
 {
 	return SHADER(
+		layout(std140) uniform Matrices
+		{
+			mat4  u_projection;
+			mat4  u_modelview;
+			ivec4 u_screenSize;
+			vec4 u_cursorColor;
+			float u_time;
+		};
+
 		uniform sampler2D u_texture;
 		uniform vec4      u_color;
 		uniform float     u_useColor;
@@ -87,7 +96,7 @@ static const char * kFrag()
 
 		void main()
 		{
-			frag_color = vec4(v_texCoord1.xy, 0, 1);
+			frag_color = vec4(v_texCoord0.xy, 0, 1);
 		});
 }
 

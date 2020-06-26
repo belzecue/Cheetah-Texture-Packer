@@ -401,6 +401,7 @@ void GLViewWidget::paintGL()
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo);
 
 	glViewport(0, 0, width, height);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	VelvetShader::Shader.bind(this, glm::vec4(.3, .5, .5, .975));
 	glDefaultVAOs::BindVAO(this);

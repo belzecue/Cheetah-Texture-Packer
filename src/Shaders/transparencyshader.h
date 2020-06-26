@@ -12,7 +12,7 @@ public:
 static TransparencyShader Shader;
     virtual ~TransparencyShader() = default;
 
-    void bind2(GLViewWidget* gl, Material *);
+    void bind(GLViewWidget* gl, Material *) override;
 
 private:
     void construct(GLViewWidget* gl) override;

@@ -163,7 +163,7 @@ void BindSquareIndexVBO(GLViewWidget * gl)
 	std::vector<uint16_t> buffer;
 	buffer.resize(65536);
 
-	for(uint32_t i = 0, j = 0; i < buffer.size(); i += 6, j += 4)
+	for(uint32_t i = 0, j = 0; i+6 < buffer.size(); i += 6, j += 4)
 	{
 		buffer[i+0] = j+0;
 		buffer[i+1] = j+1;

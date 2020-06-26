@@ -750,7 +750,7 @@ Qt::ItemFlags SpriteModel::flags(QModelIndex const& index) const
 
 			return Qt::ItemIsEnabled | Qt::ItemIsEditable;
 		}
-	}
+	} break;
 	case Heirarchy::Animation:
 	{
 		if((uint32_t)entity.object >= doc->objects.size())
@@ -763,7 +763,7 @@ Qt::ItemFlags SpriteModel::flags(QModelIndex const& index) const
 
 		if(index.column() > 0)
 			return Qt::ItemIsEditable | Qt::ItemIsEnabled;
-	}
+	} break;
 	case Heirarchy::Attachment:
 	{
 		if((uint32_t)entity.object >= doc->objects.size())
@@ -773,7 +773,7 @@ Qt::ItemFlags SpriteModel::flags(QModelIndex const& index) const
 			return Qt::ItemIsEditable | Qt::ItemIsEnabled;
 
 		return Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsEnabled;
-	}
+	} break;
 	case Heirarchy::Textures: return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 	default:
 		break;

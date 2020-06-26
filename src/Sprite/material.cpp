@@ -164,14 +164,17 @@ void Material::CreateDefaultArrays(GLViewWidget* gl)
 	}
 
 //create null textures
-	_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_texCoord]); DEBUG_GL
-	_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::u16vec4), nullptr, GL_DYNAMIC_DRAW); DEBUG_GL
-
-	for(uint32_t i = v_sheetCoordBegin; i < v_sheetCoordEnd; ++i)
 	{
-		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[i]); DEBUG_GL
-		_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::vec2), nullptr, GL_DYNAMIC_DRAW); DEBUG_GL
+		std::unique_ptr<uint8_t[], void (*)(void*)> ptr((uint8_t*)calloc(m_spriteCount * 4, sizeof(glm::u16vec4)), &std::free);
 
+		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_texCoord]); DEBUG_GL
+		_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::u16vec4), &ptr[0], GL_DYNAMIC_DRAW); DEBUG_GL
+
+		for(uint32_t i = v_sheetCoordBegin; i < v_sheetCoordEnd; ++i)
+		{
+			_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[i]); DEBUG_GL
+			_gl glBufferData(GL_ARRAY_BUFFER, m_spriteCount * 4 * sizeof(glm::vec2), &ptr[0], GL_DYNAMIC_DRAW); DEBUG_GL
+		}
 	}
 
 //create positions
@@ -214,13 +217,12 @@ void Material::Prepare(GLViewWidget* gl)
 		_gl glVertexAttribIPointer(1, 1, GL_SHORT, 0, nullptr);
 
 		_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_texCoord]);
-		_gl glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, 8, nullptr);
-		_gl glVertexAttribPointer(3, 2, GL_UNSIGNED_SHORT, GL_TRUE, 8, (void*)4);
+		_gl glVertexAttribPointer(2, 4, GL_UNSIGNED_SHORT, GL_TRUE, 0, nullptr);
 
 		for(int i = 0; i < (int)Tex::Total; ++i)
 		{
 			_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_sheetCoordBegin+i]);
-			_gl glVertexAttribPointer(4+i, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+			_gl glVertexAttribPointer(3+i, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 		}
 
 		for(int i = 0; i < v_indices; ++i)
@@ -235,23 +237,16 @@ void Material::Prepare(GLViewWidget* gl)
 		m_dirty = false;
 	}
 
-	CreateDefaultArrays(gl);
-
 	if(m_vboFlags)
 	{
+		CreateDefaultArrays(gl);
+
 		auto flags = m_vboFlags;
 		m_vboFlags = 0;
 
 		for(int i = 0; i < (int)Tex::Total; ++i)
 		{
 			if(!(flags >> i)) continue;
-
-			if(image_slots[i] == nullptr)
-			{
-				_gl glBindBuffer(GL_ARRAY_BUFFER, m_vbo[v_sheetCoordBegin+i]);
-				_gl glBufferData(GL_ARRAY_BUFFER, m_normalizedPositions.size() * sizeof(glm::vec2), nullptr, GL_DYNAMIC_DRAW);
-				continue;
-			}
 
 			std::vector<glm::vec2> coords(m_normalizedPositions.size());
 			memcpy(&coords[0], &m_normalizedPositions[0], sizeof(coords[0]) * coords.size());

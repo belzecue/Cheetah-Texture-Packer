@@ -129,7 +129,7 @@ private:
 
 	uint32_t     m_vao{};
 	uint32_t     m_vbo[VBOc]{};
-	uint32_t     m_vboFlags{0xFF};
+	uint32_t     m_vboFlags{0};
 };
 
 #endif // MATERIAL_H

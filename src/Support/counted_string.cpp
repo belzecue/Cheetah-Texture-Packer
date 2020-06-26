@@ -4,6 +4,7 @@
 #include <set>
 #include <cassert>
 #include <algorithm>
+#include <climits>
 //#include "json_detail.hpp"
 
 counted_string::handle counted_string::null_handle;
