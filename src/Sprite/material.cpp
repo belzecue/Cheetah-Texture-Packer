@@ -335,6 +335,8 @@ void Material::RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, in
 	UnlitShader::Shader.bindColor(gl, glm::vec4(1, 1, 1, 1)); DEBUG_GL
 	UnlitShader::Shader.bindTexCoords(gl, TexCoord(image_slot)); DEBUG_GL
 
+	_gl glBindTexture(GL_TEXTURE_2D, image_slots[(int)image_slot]->GetTexture());
+
 	_gl glDisable(GL_DEPTH_TEST);
 	_gl glDrawElements(GL_TRIANGLES, db.elements, GL_UNSIGNED_SHORT, db.offset());
 
