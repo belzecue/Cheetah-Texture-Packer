@@ -80,7 +80,7 @@ static const char * kFrag()
 			mat4  u_projection;
 			mat4  u_modelview;
 			ivec4 u_screenSize;
-			vec4 u_cursorColor;
+			vec4 u_cursorPos;
 			float u_time;
 		};
 
@@ -88,7 +88,7 @@ static const char * kFrag()
 		uniform vec4      u_color;
 		uniform float     u_useColor;
 
-		in vec2 v_position;
+		in vec3 v_position;
 		in vec4 v_texCoord0;
 		in vec4 v_texCoord1;
 

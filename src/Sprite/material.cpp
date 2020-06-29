@@ -72,7 +72,7 @@ void Material::SetImage(counted_ptr<Image> image, counted_ptr<Image> * slot)
 		m_sheetSize   = image->GetSize();
 		m_dirty = true;
 	}
-	else
+	else if(image != nullptr)
 	{
 	//try to optimize memory
 		image->m_sprites.merge(m_sprites);
@@ -248,6 +248,9 @@ void Material::Prepare(GLViewWidget* gl)
 		{
 			if(!(flags >> i)) continue;
 
+			if(image_slots[i] == nullptr)
+				continue;
+
 			std::vector<glm::vec2> coords(m_normalizedPositions.size());
 			memcpy(&coords[0], &m_normalizedPositions[0], sizeof(coords[0]) * coords.size());
 
@@ -267,7 +270,7 @@ void Material::Prepare(GLViewWidget* gl)
 				for(uint32_t k = 0; k < pair.length; ++k)
 				{
 					auto & v = coords[k+pair.start];
-					v = glm::mix(glm::vec2(square.x, square.y), glm::vec2(square.z, square.w), v);
+					v = glm::mix(glm::vec2(square.x, square.w), glm::vec2(square.z, square.y), v);
 				}
 			}
 
@@ -281,6 +284,8 @@ void Material::Prepare(GLViewWidget* gl)
 
 void Material::RenderObjectSheet(GLViewWidget * gl, int frame)
 {
+	if(m_sprites.empty())	return;
+
 	if(isUnlit())
 	{
 		for(int i = 0; i < (int)Tex::Total; ++i)
@@ -299,16 +304,19 @@ void Material::RenderObjectSheet(GLViewWidget * gl, int frame)
 	auto db = GetRenderData(frame);
 	RenderSheetBackdrop(gl, db);
 
-	/*
+	_gl glBindVertexArray(m_vao);
+
 	//draw sprites
-	_gl glDisable(GL_DEPTH_TEST);
 	gltfMetallicRoughness::Shader.bind(gl, this);
-	gltfMetallicRoughness::Shader.bindCenter(gl, db.center);
+	m_spriteSheet->BindBoundingBoxes(gl, GL_TEXTURE10);
+
 	gltfMetallicRoughness::Shader.bindMatrix(gl, db.matrix);
 
 	gltfMetallicRoughness::Shader.bindLayer(gl, 4);
-	_gl glDrawElements(GL_TRIANGLES, db.fr_elements, GL_UNSIGNED_SHORT, db.fr_offset());
-*/
+	gltfMetallicRoughness::Shader.bindCenter(gl, db.center);
+
+	_gl glDisable(GL_DEPTH_TEST);
+	_gl glDrawElements(GL_TRIANGLES, db.elements, GL_UNSIGNED_SHORT, db.offset());
 
 	GL_ASSERT;
 }

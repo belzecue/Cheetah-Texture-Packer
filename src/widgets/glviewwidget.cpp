@@ -387,7 +387,7 @@ void GLViewWidget::paintGL()
     mat.u_camera = glm::scale(glm::mat4(1), glm::vec3(w->GetZoom()));
 //    mat.u_camera = glm::translate(mat.u_camera, glm::vec3(-w->document->GetScreenCenter(), 0));
 	mat.u_screenSize     = glm::ivec4(width, height, window_pos.x(), window_pos.y());
-	mat.u_cursorColor   = glm::vec4(window_pos.x(), window_pos.y(), 0, 1);
+	mat.u_cursorColor   = glm::vec4(window_pos.x(), size().height() - window_pos.y(), 0, 1);
 
 	long long time =
 		std::chrono::duration_cast<std::chrono::milliseconds>(

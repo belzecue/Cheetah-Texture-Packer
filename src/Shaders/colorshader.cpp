@@ -79,7 +79,7 @@ static const char * kFrag()
 		uniform vec4      u_color;
 		uniform float     u_useColor;
 
-		in vec2 v_position;
+		in vec3 v_position;
 		in vec4 v_texCoord0;
 		in vec4 v_texCoord1;
 

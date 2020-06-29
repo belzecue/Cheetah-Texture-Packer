@@ -52,7 +52,7 @@ static const char * kFrag()
 			mat4  u_projection;
 			mat4  u_modelview;
 			ivec4 u_screenSize;
-			vec4 u_cursorColor;
+			vec4 u_cursorPos;
 			float u_time;
 		};
 

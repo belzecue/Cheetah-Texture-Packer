@@ -86,14 +86,14 @@ void VelvetShader::bind(GLViewWidget* gl, glm::vec4 color)
 static const char * kVert()
 {
 	return SHADER(
-		layout(std140) uniform Matrices
-		{
-			mat4  u_projection;
-			mat4  u_modelview;
-			ivec4 u_screenSize;
-			ivec4 u_spriteSize;
-			float u_time;
-		};
+	layout(std140) uniform Matrices
+	{
+		mat4  u_projection;
+		mat4  u_modelview;
+		ivec4 u_screenSize;
+		vec4 u_cursorPos;
+		float u_time;
+	};
 
 		in vec3 a_vertex;
 		in vec2 a_uv;
@@ -111,6 +111,15 @@ static const char * kVert()
 static const char * kFrag()
 {
 	return SHADER(
+	layout(std140) uniform Matrices
+	{
+		mat4  u_projection;
+		mat4  u_modelview;
+		ivec4 u_screenSize;
+		vec4 u_cursorPos;
+		float u_time;
+	};
+
 		uniform sampler2D u_texture;
 	    uniform vec4      u_color;
 		uniform ivec2     u_texSize;

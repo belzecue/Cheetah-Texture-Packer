@@ -144,7 +144,7 @@ const char * SpriteShaderBase::SpriteVert()
 			mat4  u_projection;
 			mat4  u_modelview;
 			ivec4 u_screenSize;
-			 vec4 u_cursorColor;
+			 vec4 u_cursorPos;
 			float u_time;
 		};
 
@@ -152,6 +152,7 @@ const char * SpriteShaderBase::SpriteVert()
 		uniform float u_layer;
 		uniform ivec4 u_texCoords;
 		uniform isamplerBuffer u_bufferTexture;
+		uniform float u_center;
 
 		in vec2 a_vertex;
 		in int  a_id;
@@ -164,7 +165,7 @@ const char * SpriteShaderBase::SpriteVert()
 		in vec2 a_texCoord6;
 		in vec2 a_texCoord7;
 
-		out vec2 v_position;
+		out vec3 v_position;
 		out vec4 v_texCoord0;
 		out vec4 v_texCoord1;
 
@@ -173,9 +174,9 @@ const char * SpriteShaderBase::SpriteVert()
 			vec4 box    = texelFetch(u_bufferTexture, a_id);
 			vec2 size   = box.zw - box.xy;
 
-			vec2 pos    = box.xy + size * (1 + a_vertex) * .5;
+			vec2 pos    = .5 * size * a_vertex + (1 - u_center) * (box.xy + .5 * size);
 			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, 0, 1.0)));
-			v_position  = gl_Position.xy;
+			v_position  = gl_Position.xyz;
 
 			vec2 texCoord[9] = vec2[9](
 				a_texCoord0.xy,
@@ -204,7 +205,7 @@ const char * SpriteShaderBase::SheetVert()
 			mat4  u_projection;
 			mat4  u_modelview;
 			ivec4 u_screenSize;
-			 vec4 u_cursorColor;
+			 vec4 u_cursorPos;
 			float u_time;
 		};
 
@@ -217,7 +218,7 @@ const char * SpriteShaderBase::SheetVert()
 		in int  a_id;
 		in vec4 a_texCoord0;
 
-		out vec2 v_position;
+		out vec3 v_position;
 		out vec4 v_texCoord0;
 		out vec4 v_texCoord1;
 
@@ -225,7 +226,7 @@ const char * SpriteShaderBase::SheetVert()
 		{
 			vec2 pos    = a_vertex + texelFetch(u_bufferTexture, a_id).rg;
 			gl_Position = u_projection * (u_modelview * (u_object * vec4(pos, u_layer, 1.0)));
-			v_position  = gl_Position.xy;
+			v_position  = gl_Position.xyz;
 
 			v_texCoord0 = a_texCoord0;
 			v_texCoord1 = a_texCoord0;

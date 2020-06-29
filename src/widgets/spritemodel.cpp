@@ -634,6 +634,23 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 	return false;
 }
 
+bool IsAnimation(Heirarchy heirarchy, MaterialProperty property)
+{
+	switch(heirarchy)
+	{
+	case Heirarchy::Root:           return false;
+	case Heirarchy::ObjectList:  	return true;
+	case Heirarchy::ObjectContents:	return true;
+	case Heirarchy::Material:		return GetModel()[(int)property].type != TokType::Texture;
+	case Heirarchy::Animation:		return true;
+	case Heirarchy::Attachment:		return false;
+	case Heirarchy::Textures:		return false;
+	default:						break;
+	}
+
+	return false;
+}
+
 void SpriteModel::activated(const QModelIndex & index )
 {
 	Entity entity = index.internalPointer();
@@ -641,7 +658,7 @@ void SpriteModel::activated(const QModelIndex & index )
 	if(!index.isValid())
 		return;
 
-	if(entity.heirarchy == Heirarchy::Animation)
+	if(IsAnimation(entity.heirarchy, entity.property))
 		window->ui->viewWidget->set_animation();
 	else
 		window->ui->viewWidget->need_repaint();

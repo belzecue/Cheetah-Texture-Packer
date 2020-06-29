@@ -12,7 +12,7 @@ gltfMetallicRoughness gltfMetallicRoughness::Shader;
 void gltfMetallicRoughness::construct(GLViewWidget* gl)
 {
     compile(gl, SpriteVert(), GL_VERTEX_SHADER);
-    tryLoad(gl, kFrag(), GL_FRAGMENT_SHADER);
+    compile(gl, kFrag(), GL_FRAGMENT_SHADER);
 	SpriteLink(gl);
 
 	uniform(gl, u_normal,          "u_normal");
@@ -109,14 +109,14 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 static const char * kFrag()
 {
 	return SHADER(
-layout(std140) uniform Matrices
-{
-	mat4  u_projection;
-	mat4  u_modelview;
-	ivec4 u_screenSize;
-	vec4  u_cursorPos;
-	float u_time;
-};
+	layout(std140) uniform Matrices
+	{
+		mat4  u_projection;
+		mat4  u_modelview;
+		ivec4 u_screenSize;
+		vec4 u_cursorPos;
+		float u_time;
+	};
 
 uniform sampler2D u_normal;
 uniform sampler2D u_occlusion;
@@ -130,8 +130,8 @@ uniform vec4  u_baseColorFactor;
 uniform vec3  u_emissionFactor;
 
 in vec3 v_position;
-in vec4 v_texCoord;
-in vec2 v_sprCoord;
+in vec4 v_texCoord0;
+in vec4 v_texCoord1;
 
 out vec4 frag_color;
 
@@ -170,6 +170,8 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 // or from the interpolated mesh normal and tangent attributes.
 vec3 getNormal(vec2 texCoord)
 {
+	return vec3(0, 0, 1);
+
 	vec3 n = texture(u_normal, texCoord).rgb;
 	n = ((2.0 * n - 1.0) * vec3(u_NOMR[0], u_NOMR[0], 1.0));
 	return normalize(n);
@@ -220,24 +222,19 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 void main()
 {
-	vec2 texCoord[3] = vec2[3](
-		v_texCoord.xy,
-		v_texCoord.wz,
-		v_sprCoord
-	);
-
-// The albedo may be defined from a base texture or a flat color
-	vec4 baseColor = texture(u_diffuse, texCoord1.xy) * u_baseColorFactor;
-	vec4 pbr       = texture(u_pbr,     texCoord1.zw);
+	// The albedo may be defined from a base texture or a flat color
+	vec4 baseColor = texture(u_diffuse, v_texCoord1.xy) * u_baseColorFactor;
+	vec4 pbr       = texture(u_pbr,     v_texCoord1.zw);
 	vec3 diffuseColor = baseColor.rgb;
-	vec3 specularColor;
-	float alphaRoughness;
+	vec3 specularColor = vec3(.04);
+	float alphaRoughness = 0;
 
 	if(u_specularFactor.z == 1.f)
 	{
 		alphaRoughness = (1 -  pbr.a * u_NOMR[3]);
 		alphaRoughness       = alphaRoughness * alphaRoughness;
 		specularColor        = pbr.rbg * u_specularFactor.rgb;
+		specularColor        = vec3(1, 0, 0);
 	}
 	else
 	{
@@ -258,7 +255,13 @@ void main()
 		diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
 		diffuseColor *= 1.0 - metallic;
 		specularColor = mix(f0, baseColor.rgb, metallic);
+		specularColor        = vec3(0, 1, 0);
 	}
+
+
+	frag_color = vec4(specularColor, 1);
+	return;
+
 
 	// Compute reflectance.
 	float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
@@ -271,9 +274,8 @@ void main()
 
 	vec3 screen_space = vec3(gl_FragCoord.xy - u_screenSize.xy * .5,  256 - v_position.z * .004);
 
-	vec3 n = getNormal(texCoord[v_texCoords0.xy);                             // normal at surface point
+	vec3 n = getNormal(v_texCoord0.xy);                             // normal at surface point
 	vec3 v = normalize(screen_space);                // Vector from surface point to camera
-
 	PBRInfo pbrInputs = PBRInfo(
 		0,
 		0,
@@ -292,13 +294,13 @@ void main()
 
 	{
 		float radius   = 500;
-		vec3  distance = u_cursorPos.xyz - v_position;
-		distance.z    *= .5;
+		vec3  distance = vec3(0, 0, -1);
+	//	distance.z    *= .5;
 
 		float length2 =  dot(distance, distance);
 		float length  =  sqrt(length2);
 
-		int is_on      =  int(length2 < radius*radius);
+		int is_on      = 1; // int(length2 < radius*radius);
 		length2        = min(length2, radius * radius - 1);
 	//	color4 = mix(color4, vec4(0,0,0,0), vec4(float(distance.z < 0)));
 
@@ -320,18 +322,19 @@ void main()
 
 		float d_prime = length / (1 - length2 / (radius * radius));
 		float att     = 1 + d_prime / radius;
-		att           = att*att;
+		att           = 1; //att*att;
 		float color   = (pbrInputs.NdotL * is_on / att );
 
 		//vec3 color     = vec3(pbrInputs.NdotL);
 		// Calculation of analytical lighting contribution
-		diffuseContrib += color * (1.0 - F);
+		diffuseContrib += color;
 		specContrib    += color * F * (G * D / (4.0 * pbrInputs.NdotL * pbrInputs.NdotV));
 	}
 
-	vec3 color = diffuseContrib * diffuse(pbrInputs) + specContrib;
+	vec3 color = 1000 * diffuseContrib * diffuse(pbrInputs) + specContrib;
 
 	frag_color = vec4(color, baseColor.a);
 });
+
 }
 
