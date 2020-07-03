@@ -121,12 +121,20 @@ void SpriteShaderBase::bindTextures(GLViewWidget* gl, Material * material)
 		_gl glBindTexture(GL_TEXTURE_2D, DefaultTextures::Get().GetNormalTexture(gl));
 
 	_gl glActiveTexture(GL_TEXTURE2);
-	if(use_specular && material->image_slots[(int)Tex::SpecularGlossiness])
-		_gl glBindTexture(GL_TEXTURE_2D, material->image_slots[(int)Tex::SpecularGlossiness]->GetTexture());
-	else if(!use_specular && material->image_slots[(int)Tex::MetallicRoughness])
-		_gl glBindTexture(GL_TEXTURE_2D, material->image_slots[(int)Tex::MetallicRoughness]->GetTexture());
+	if(use_specular)
+	{
+		if(material->image_slots[(int)Tex::SpecularGlossiness])
+			_gl glBindTexture(GL_TEXTURE_2D, material->image_slots[(int)Tex::SpecularGlossiness]->GetTexture());
+		else
+			_gl glBindTexture(GL_TEXTURE_2D, DefaultTextures::Get().GetSpecularGlossinessTexture(gl));
+	}
 	else
-		_gl glBindTexture(GL_TEXTURE_2D, DefaultTextures::Get().GetWhiteTexture(gl));
+	{
+		if(material->image_slots[(int)Tex::MetallicRoughness])
+			_gl glBindTexture(GL_TEXTURE_2D, material->image_slots[(int)Tex::MetallicRoughness]->GetTexture());
+		else
+			_gl glBindTexture(GL_TEXTURE_2D, DefaultTextures::Get().GetMetallicRoughnessTexture(gl));
+	}
 
 	_gl glActiveTexture(GL_TEXTURE3);
 	if(material->image_slots[(int)Tex::Occlusion])

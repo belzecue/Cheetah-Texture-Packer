@@ -170,10 +170,10 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 // or from the interpolated mesh normal and tangent attributes.
 vec3 getNormal(vec2 texCoord)
 {
-	return vec3(0, 0, 1);
-
 	vec3 n = texture(u_normal, texCoord).rgb;
-	n = ((2.0 * n - 1.0) * vec3(u_NOMR[0], u_NOMR[0], 1.0));
+	n    = (2.0 * n - 1.0);
+	n.b  = (sqrt(1.f - (n.r*n.r + n.g*n.g)));
+	n   *= vec3(u_NOMR[0], u_NOMR[0], 1.0);
 	return normalize(n);
 }
 
@@ -229,7 +229,7 @@ void main()
 	vec3 specularColor = vec3(.04);
 	float alphaRoughness = 0;
 
-	if(u_specularFactor.z == 1.f)
+	if(u_specularFactor.a == 1.f)
 	{
 		alphaRoughness = (1 -  pbr.a * u_NOMR[3]);
 		alphaRoughness       = alphaRoughness * alphaRoughness;
@@ -255,13 +255,7 @@ void main()
 		diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
 		diffuseColor *= 1.0 - metallic;
 		specularColor = mix(f0, baseColor.rgb, metallic);
-		specularColor        = vec3(0, 1, 0);
 	}
-
-
-	frag_color = vec4(specularColor, 1);
-	return;
-
 
 	// Compute reflectance.
 	float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
@@ -289,18 +283,18 @@ void main()
 		specularColor
 	);
 
-	vec3 specContrib    = vec3(0, 0, 0);
-	vec3 diffuseContrib = vec3(0, 0, 0);
+	vec3  specContrib    = vec3(0, 0, 0);
+	float diffuseContrib = 0;
 
 	{
 		float radius   = 500;
-		vec3  distance = vec3(0, 0, -1);
+		vec3  distance = vec3(u_cursorPos.xy, -10) - vec3(gl_FragCoord.xy, 0);
 	//	distance.z    *= .5;
 
 		float length2 =  dot(distance, distance);
 		float length  =  sqrt(length2);
 
-		int is_on      = 1; // int(length2 < radius*radius);
+		int is_on      = int(length2 < radius*radius);
 		length2        = min(length2, radius * radius - 1);
 	//	color4 = mix(color4, vec4(0,0,0,0), vec4(float(distance.z < 0)));
 
@@ -322,7 +316,7 @@ void main()
 
 		float d_prime = length / (1 - length2 / (radius * radius));
 		float att     = 1 + d_prime / radius;
-		att           = 1; //att*att;
+		att           = att*att;
 		float color   = (pbrInputs.NdotL * is_on / att );
 
 		//vec3 color     = vec3(pbrInputs.NdotL);
@@ -331,7 +325,7 @@ void main()
 		specContrib    += color * F * (G * D / (4.0 * pbrInputs.NdotL * pbrInputs.NdotV));
 	}
 
-	vec3 color = 1000 * diffuseContrib * diffuse(pbrInputs) + specContrib;
+	vec3 color = 10000 * diffuseContrib * diffuse(pbrInputs) + specContrib;
 
 	frag_color = vec4(color, baseColor.a);
 });

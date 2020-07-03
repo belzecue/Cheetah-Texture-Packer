@@ -14,22 +14,6 @@ DefaultTextures::~DefaultTextures()
 {
 }
 
-uint32_t DefaultTextures::GetWhiteTexture(GLViewWidget * gl)
-{
-	if(textures[WhiteTexture] == 0)
-		createTextures(gl);
-
-	return textures[WhiteTexture];
-}
-
-uint32_t DefaultTextures::GetNormalTexture(GLViewWidget * gl)
-{
-	if(textures[NormalTexture] == 0)
-		createTextures(gl);
-
-	return textures[NormalTexture];
-}
-
 void DefaultTextures::createTextures(GLViewWidget * gl)
 {
 	if(refCount.load() == 0)
@@ -37,21 +21,24 @@ void DefaultTextures::createTextures(GLViewWidget * gl)
 
 	_gl glGenTextures(TotalTextures, textures);
 
-	uint32_t pixels[TotalTextures] =
+	uint8_t pixels[TotalTextures][4] =
 	{
-		0xFFFFFFFF,
-		0x8080FFFF
+		{0xFF, 0xFF, 0xFF, 0xFF},
+		{0x80, 0x80, 0xFF, 0xFF},
+		{0x01, 0x01, 0x01, 0x80},
+		{0xFF, 0x80, 0x00, 0xFF}
 	};
+
 
 	for(int i = 0; i < TotalTextures; ++i)
 	{
 		_gl glBindTexture(GL_TEXTURE_2D, textures[i]);
 
-		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
-		_gl glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-		_gl glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
 		_gl glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
@@ -64,7 +51,7 @@ void DefaultTextures::createTextures(GLViewWidget * gl)
 			0, //border must be 0
 			GL_RGBA, //format of incoming source
 			GL_UNSIGNED_BYTE, //specific format
-			&pixels[i]);
+			&pixels[i][0]);
 	}
 }
 

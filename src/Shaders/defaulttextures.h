@@ -18,14 +18,24 @@ public:
 	inline void AddRef() { ++refCount; }
 	inline void Release(GLViewWidget * gl) { if(--refCount == 0) destroyTextures(gl); }
 
-	uint32_t GetWhiteTexture(GLViewWidget * gl);
-	uint32_t GetNormalTexture(GLViewWidget * gl);
+#define TextureGetter(x) \
+	uint32_t Get##x(GLViewWidget * gl) { \
+		if(textures[x] == 0)	createTextures(gl); \
+		return textures[x]; \
+	}
+
+	TextureGetter(WhiteTexture)
+	TextureGetter(NormalTexture)
+	TextureGetter(SpecularGlossinessTexture)
+	TextureGetter(MetallicRoughnessTexture)
 
 private:
 	enum
 	{
 		WhiteTexture,
 		NormalTexture,
+		SpecularGlossinessTexture,
+		MetallicRoughnessTexture,
 		TotalTextures
 	};
 
