@@ -28,8 +28,9 @@ T & Get(Material &mat, ModelToken const& detail)
 }
 
 
-#define Token2(depth, row, children, name, first_child)  { MaterialProperty:: name, MaterialProperty:: first_child, row, depth, children, TokType::None, 0L, #name  }
-#define Token_(depth, row, children, name, tok_type, offset)  { MaterialProperty:: name, MaterialProperty::None, row, depth, children, TokType:: tok_type, (uint8_t*)&singleton.offset - (uint8_t*)&singleton, #name  }
+#define Token3(depth, row, children, name, tok_type, offset, string)  { MaterialProperty:: name, MaterialProperty::None, row, depth, children, TokType:: tok_type, (uint8_t*)&singleton.offset - (uint8_t*)&singleton, string  }
+#define Token2(depth, row, children, name, first_child)               { MaterialProperty:: name, MaterialProperty:: first_child, row, depth, children, TokType::None, 0L, #name  }
+#define Token_(depth, row, children, name, tok_type, offset)          Token3(depth, row, children, name, tok_type, offset, #name)
 
 static ModelToken * GetModel()
 {
@@ -47,7 +48,7 @@ static ModelToken * GetModel()
 	Token2(1, 6, 5, PBRMetallicRoughness, BaseColorFactor),
 	Token_(1, 7, 0, EmissiveFactor,            Vec3,    emissiveFactor),
 	Token_(1, 8, 0, EmissiveTexture,           Texture, image_slots[(int)Material::Tex::Emission]),
-	Token2(1, 9, 4, KHR_SpecularGlossiness, DiffuseFactor),
+	Token2(1, 9, 6, KHR_SpecularGlossiness,     DiffuseFactor),
 	Token_(1,10, 0, Unlit,                     Boolean, unlit.is_empty),
 
 	Token_(2, 0, 0, NormalTexture,             Texture, image_slots[(int)Material::Tex::Normal]),
@@ -64,8 +65,10 @@ static ModelToken * GetModel()
 
 	Token_(2, 0, 0, DiffuseFactor,             Vec4,    pbrSpecularGlossiness.diffuseFactor),
 	Token_(2, 1, 0, DiffuseTexture,            Texture, image_slots[(int)Material::Tex::Diffuse]),
+	Token_(2, 2, 0, SpecularFactor,            Vec3,    pbrSpecularGlossiness.specularFactor),
 	Token_(2, 2, 0, GlossinessFactor,          Float,   pbrSpecularGlossiness.glossinessFactor),
 	Token_(2, 3, 0, SpecularGlossinessTexture, Texture, image_slots[(int)Material::Tex::SpecularGlossiness]),
+	Token3(2, 4, 0, SpecularGlossinessEnabled, Boolean, pbrSpecularGlossiness.is_empty, "Is Enabled"),
 
 	{}
 	};
@@ -95,6 +98,15 @@ Material::Tex GetTexture(MaterialProperty prop)
 SpriteModel::SpriteModel(QObject * parent) :
 	super(parent)
 {
+//unit test model
+	auto model = GetModel();
+
+	for(int i = 0;  !i || (int)model[i].property != 0; ++i)
+	{
+		if((int)model[i].property != i)
+			throw std::logic_error("material model corrupt");
+	}
+
 }
 
 QModelIndex SpriteModel::index(const int row, const int column, const QModelIndex &parent) const

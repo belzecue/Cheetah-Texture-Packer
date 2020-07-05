@@ -43,7 +43,7 @@ enum class MaterialProperty : uint8_t
 	SpecularFactor,
 	GlossinessFactor,
 	SpecularGlossinessTexture,
-
+	SpecularGlossinessEnabled,
 
 	Total
 };
