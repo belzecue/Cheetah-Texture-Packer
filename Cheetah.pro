@@ -67,6 +67,7 @@ SOURCES += src/main.cpp\
 	src/Sprite/spritesheet.cpp \
 	src/Support/counted_string.cpp \
 	src/Support/imagesupport.cpp \
+	src/Texture-Packer/packspritesheet.cpp \
 	src/commandlist.cpp \
 	src/imagemetadata.cpp \
 	src/lf_math.cpp \
@@ -141,6 +142,7 @@ HEADERS  += src/mainwindow.h \
 	src/Support/glm_iostream.hpp \
 	src/Support/imagesupport.h \
 	src/Support/vectoroperations.hpp \
+	src/Texture-Packer/packspritesheet.h \
 	src/commandinterface.hpp \
 	src/commandlist.h \
 	src/enums.hpp \
