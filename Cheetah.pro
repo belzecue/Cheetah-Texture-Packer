@@ -28,25 +28,6 @@ CONFIG += c++14
 DEFINES += GLM_EXT_INCLUDED \"_gl=gl->\"
 
 SOURCES += src/main.cpp\
-	../../../Libraries/basis_universal/apg_bmp.c \
-	../../../Libraries/basis_universal/basisu_astc_decomp.cpp \
-	../../../Libraries/basis_universal/basisu_backend.cpp \
-	../../../Libraries/basis_universal/basisu_basis_file.cpp \
-	../../../Libraries/basis_universal/basisu_bc7enc.cpp \
-	../../../Libraries/basis_universal/basisu_comp.cpp \
-	../../../Libraries/basis_universal/basisu_enc.cpp \
-	../../../Libraries/basis_universal/basisu_etc.cpp \
-	../../../Libraries/basis_universal/basisu_frontend.cpp \
-	../../../Libraries/basis_universal/basisu_global_selector_palette_helpers.cpp \
-	../../../Libraries/basis_universal/basisu_gpu_texture.cpp \
-	../../../Libraries/basis_universal/basisu_pvrtc1_4.cpp \
-	../../../Libraries/basis_universal/basisu_resample_filters.cpp \
-	../../../Libraries/basis_universal/basisu_resampler.cpp \
-	../../../Libraries/basis_universal/basisu_ssim.cpp \
-	../../../Libraries/basis_universal/basisu_uastc_enc.cpp \
-	../../../Libraries/basis_universal/jpgd.cpp \
-	../../../Libraries/basis_universal/lodepng.cpp \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder.cpp \
 	../../../Libraries/fx-gltf/src/bufferinfo.cpp \
 	../../../Libraries/fx-gltf/src/fx/gltf.cpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.cpp \
@@ -62,6 +43,7 @@ SOURCES += src/main.cpp\
 	src/Sprite/animation.cpp \
 	src/Sprite/document.cpp \
 	src/Sprite/image.cpp \
+	src/Sprite/import_c16.cpp \
 	src/Sprite/material.cpp \
 	src/Sprite/object.cpp \
 	src/Sprite/spritesheet.cpp \
@@ -87,32 +69,6 @@ SOURCES += src/main.cpp\
     src/rc_crc32.c
 
 HEADERS  += src/mainwindow.h \
-	../../../Libraries/basis_universal/apg_bmp.h \
-	../../../Libraries/basis_universal/basisu_astc_decomp.h \
-	../../../Libraries/basis_universal/basisu_backend.h \
-	../../../Libraries/basis_universal/basisu_basis_file.h \
-	../../../Libraries/basis_universal/basisu_bc7enc.h \
-	../../../Libraries/basis_universal/basisu_comp.h \
-	../../../Libraries/basis_universal/basisu_enc.h \
-	../../../Libraries/basis_universal/basisu_etc.h \
-	../../../Libraries/basis_universal/basisu_frontend.h \
-	../../../Libraries/basis_universal/basisu_global_selector_palette_helpers.h \
-	../../../Libraries/basis_universal/basisu_gpu_texture.h \
-	../../../Libraries/basis_universal/basisu_miniz.h \
-	../../../Libraries/basis_universal/basisu_pvrtc1_4.h \
-	../../../Libraries/basis_universal/basisu_resampler.h \
-	../../../Libraries/basis_universal/basisu_resampler_filters.h \
-	../../../Libraries/basis_universal/basisu_ssim.h \
-	../../../Libraries/basis_universal/basisu_uastc_enc.h \
-	../../../Libraries/basis_universal/jpgd.h \
-	../../../Libraries/basis_universal/lodepng.h \
-	../../../Libraries/basis_universal/transcoder/basisu.h \
-	../../../Libraries/basis_universal/transcoder/basisu_file_headers.h \
-	../../../Libraries/basis_universal/transcoder/basisu_global_selector_cb.h \
-	../../../Libraries/basis_universal/transcoder/basisu_global_selector_palette.h \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder.h \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_internal.h \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_uastc.h \
 	../../../Libraries/fx-gltf/src/accessorreader.hpp \
 	../../../Libraries/fx-gltf/src/accessortypeinfo.hpp \
 	../../../Libraries/fx-gltf/src/bufferinfo.h \
@@ -133,6 +89,7 @@ HEADERS  += src/mainwindow.h \
 	src/Sprite/animation.h \
 	src/Sprite/document.h \
 	src/Sprite/image.h \
+	src/Sprite/import_c16.h \
 	src/Sprite/material.h \
 	src/Sprite/object.h \
 	src/Sprite/spritesheet.h \

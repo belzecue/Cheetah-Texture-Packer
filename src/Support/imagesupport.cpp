@@ -2,12 +2,7 @@
 
 #include "Support/glm_iostream.hpp"
 
-#include "basisu_enc.h"
 #include "imagesupport.h"
-#include "lf_math.h"
-#include "lodepng.h"
-#include "apg_bmp.h"
-#include "jpgd.h"
 
 #include <iostream>
 #include <glm/glm.hpp>

@@ -5,6 +5,8 @@
 #include "Support/countedsizedarray.hpp"
 #include <vector>
 
+class GLViewWidget;
+
 struct PackSpriteSheet
 {
 	PackSpriteSheet(CountedSizedArray<glm::u16vec2> sizes);
@@ -15,11 +17,13 @@ struct PackSpriteSheet
 	CountedSizedArray<glm::u16vec2> positions;
 	CountedSizedArray<glm::u16vec2> sizes;
 
-
+	uint32_t UploadData(GLViewWidget *gl, void ** sprites, uint32_t internal_format, uint32_t format, uint32_t type, float compression_ratio = 0.f);
 
 private:
 	struct SheetMemo
 	{
+		uint32_t perimeter() { return (size.x + size.y)*2; }
+
 		glm::u16vec2 size;
 		std::vector<int> row_heights;
 	};

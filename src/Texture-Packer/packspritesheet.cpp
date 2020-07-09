@@ -1,23 +1,48 @@
 #include "packspritesheet.h"
+#include <widgets/glviewwidget.h>
 #include <climits>
+#include <memory>
 
+
+bool IsCompressed(uint32_t u)
+{
+	switch(u)
+	{
+	case GL_COMPRESSED_RED:
+	case GL_COMPRESSED_RG:
+	case GL_COMPRESSED_RGB:
+	case GL_COMPRESSED_RGBA:
+	case GL_COMPRESSED_SRGB:
+	case GL_COMPRESSED_SRGB_ALPHA:
+	case GL_COMPRESSED_RED_RGTC1:
+	case GL_COMPRESSED_SIGNED_RED_RGTC1:
+	case GL_COMPRESSED_RG_RGTC2:
+	case GL_COMPRESSED_SIGNED_RG_RGTC2:
+	case GL_COMPRESSED_RGBA_BPTC_UNORM:
+	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:
+	case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT:
+	case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT:
+		return true;
+	}
+
+	return false;
+}
 
 PackSpriteSheet::PackSpriteSheet(CountedSizedArray<glm::u16vec2> _sizes) :
 	sizes(std::move(_sizes))
 {
-	uint32_t  optimal_area = SumArea(&sizes[0], sizes.size(), true);
+//	uint32_t  optimal_area = SumArea(&sizes[0], sizes.size(), true);
 	SheetMemo best         = CreateMemo(&sizes[0], 1, sizes.size());
-	float     max         = optimal_area / (float) (best.size.x * best.size.y);
+//	float     max         = optimal_area / (float) (best.size.x * best.size.y);
 
 
 	for(uint32_t i = 2; i <= sizes.size(); ++i)
 	{
 		SheetMemo eax = CreateMemo(&sizes[0], i, sizes.size());
-		float     value = optimal_area / (float) (eax.size.x * eax.size.y);
+		//float     value = optimal_area / (float) (eax.size.x * eax.size.y);
 
-
-
-
+		if(eax.perimeter() < best.perimeter())
+			best = eax;
 	}
 
 
@@ -36,8 +61,6 @@ PackSpriteSheet::PackSpriteSheet(CountedSizedArray<glm::u16vec2> _sizes) :
 	}
 }
 
-
-
 uint32_t PackSpriteSheet::SumArea(glm::u16vec2 const* sprites, uint32_t no_sprites, bool padding)
 {
 	uint32_t r{};
@@ -50,7 +73,6 @@ uint32_t PackSpriteSheet::SumArea(glm::u16vec2 const* sprites, uint32_t no_sprit
 
 	return r;
 }
-
 
 PackSpriteSheet::SheetMemo PackSpriteSheet::CreateMemo(glm::u16vec2 const* sprites, uint32_t first_cut, uint32_t no_sprites)
 {
@@ -93,4 +115,80 @@ PackSpriteSheet::SheetMemo PackSpriteSheet::CreateMemo(glm::u16vec2 const* sprit
 	}
 
 	return { glm::u16vec2(sheet.x, sheet.y), std::move(row_start) };
+}
+
+uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t internal_format, uint32_t format, uint32_t type, float compression_ratio)
+{
+	uint32_t r;
+
+	try
+	{
+		_gl glGenTextures(1, &r);
+
+		_gl glBindTexture(GL_TEXTURE_2D, r);
+
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
+
+		_gl glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+
+		{
+			uint32_t N = size.x*size.y;
+			std::unique_ptr<glm::u8vec4[]> background_color(new glm::u8vec4[N]);
+
+			for(uint32_t i = 0; i < N; ++i)
+				background_color[i] = border_color;
+
+			_gl glTexImage2D(GL_TEXTURE_2D,
+				0,
+				internal_format,
+				size.x,
+				size.y,
+				0,
+				GL_RGBA,
+				GL_UNSIGNED_BYTE,
+				&background_color[0][0]);
+		}
+
+		bool is_compressed = IsCompressed(format);
+
+		for(uint32_t i = 0; i < positions.size(); ++i)
+		{
+			glm::u16vec4 coords = glm::u16vec4(positions[i], sizes[i].x, sizes[i].y);
+
+			if(!is_compressed)
+				_gl glTexSubImage2D(GL_TEXTURE_2D,
+					0,
+					coords.x,
+					coords.y,
+					size.x,
+					size.y,
+					format,
+					type,
+					sprites[i]);
+			else
+				_gl glCompressedTexSubImage2D(GL_TEXTURE_2D,
+					0,
+					coords.x,
+					coords.y,
+					size.x,
+					size.y,
+					format,
+					coords.z * coords.w * compression_ratio,
+					sprites[i]);
+		}
+	}
+	catch(...)
+	{
+		_gl glBindTexture(GL_TEXTURE_2D, 0);
+		_gl glDeleteTextures(1, &r);
+		r = 0;
+		throw;
+	}
+
+	return r;
 }
