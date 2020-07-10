@@ -62,6 +62,15 @@ struct Header
 	uint32_t end() const { return offset * width * height; }
 };
 
+struct C16Header
+{
+	uint32_t offset;
+	uint16_t width;
+	uint16_t height;
+
+	CountedSizedArray<uint32_t> row_offsets;
+};
+
 SpriteFile SpriteFile::ReadSpr(const char * path)
 {
 	auto fp = OpenBinary(path);
@@ -96,6 +105,24 @@ SpriteFile SpriteFile::ReadSpr(const char * path)
 	return r;
 }
 
+static glm::u8vec3 From565(uint16_t r)
+{
+	return {
+		(r & 0xF800) >> 8,
+		(r & 0x07E)  >> 3,
+		(r & 0x001F) << 3
+	};
+}
+
+static glm::u8vec3 From555(uint16_t r)
+{
+	return {
+		(r & 0x7C00) >> 7,
+		(r & 0x03E)  >> 2,
+		(r & 0x001F) << 3
+	};
+}
+
 SpriteFile SpriteFile::ReadS16(const char * path)
 {
 	auto fp = OpenBinary(path);
@@ -112,13 +139,83 @@ SpriteFile SpriteFile::ReadS16(const char * path)
 	auto begin = fp.tellg();
 	int heap_size = (header.back().end() - begin);
 
-	SpriteFile r(no_files, heap_size*4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+	SpriteFile r(no_files, heap_size*2, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 	fp.read((char*)&r.heap[0], heap_size);
 
+	for(uint16_t i = 0; i < no_files; ++i)	r.sizes   [i] = glm::u16vec2(header[i].width, header[i].height);
+	for(uint16_t i = 0; i < no_files; ++i)	r.pointers[i] = &r.heap[(header[i].offset - begin)*4];
+
+	auto FromUint16 = type? &From565 : &From555;
+
+	for(--heap_size; heap_size >= 0; heap_size -= 2)
+	{
+		glm::u8vec3  src  = FromUint16(*(uint16_t*)&r.heap[heap_size]);
+		glm::u8vec4 & dst = *(glm::u8vec4*)&r.heap[heap_size*2];
+
+		if(src.x == 0 && src.y == 0 && src.z == 0)
+			dst = glm::u8vec4(0, 0, 0, 0);
+		else
+			dst = glm::u8vec4(src, 255);
+	}
+
+	return r;
 }
 
 SpriteFile SpriteFile::ReadC16(const char * path)
 {
+	auto fp = OpenBinary(path);
+
+	uint32_t type{};
+	uint16_t no_files{};
+	std::vector<C16Header> header;
+
+	fp.read((char*)&type, 4);
+	fp.read((char*)&no_files, 2);
+	header.resize(no_files);
+
+	for(uint32_t i = 0; i < no_files; ++i)
+	{
+		fp.read((char*)&header[i], sizeof(header[0]));
+
+		if(header[i].height > 1)
+		{
+			header[i].row_offsets = CountedSizedArray<uint32_t>(header[i].height-1);
+			fp.read((char*)&header[i].row_offsets[0], 4 * header[i].height-1);
+		}
+	}
+
+	fp.read((char*)&header[0], no_files * header.size());
+
+	auto begin = fp.tellg();
+	fp.seekg(0, std::ios_base::end);
+
+	std::unique_ptr<uint8_t[]> file_data(new uint8_t[fp.tellg()]);
+	fp.seekg(0, std::ios_base::beg);
+
+	fp.read(&file_data[0]);
+
+
+
+	SpriteFile r(no_files, heap_size*2, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+	fp.read((char*)&r.heap[0], heap_size);
+
+	for(uint16_t i = 0; i < no_files; ++i)	r.sizes   [i] = glm::u16vec2(header[i].width, header[i].height);
+	for(uint16_t i = 0; i < no_files; ++i)	r.pointers[i] = &r.heap[(header[i].offset - begin)*4];
+
+	auto FromUint16 = type? &From565 : &From555;
+
+	for(--heap_size; heap_size >= 0; heap_size -= 2)
+	{
+		glm::u8vec3  src  = FromUint16(*(uint16_t*)&r.heap[heap_size]);
+		glm::u8vec4 & dst = *(glm::u8vec4*)&r.heap[heap_size*2];
+
+		if(src.x == 0 && src.y == 0 && src.z == 0)
+			dst = glm::u8vec4(0, 0, 0, 0);
+		else
+			dst = glm::u8vec4(src, 255);
+	}
+
+	return r;
 }
 
 uint8_t PALETTE_DTA[] = {
