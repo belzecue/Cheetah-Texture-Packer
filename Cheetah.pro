@@ -31,6 +31,9 @@ SOURCES += src/main.cpp\
 	../../../Libraries/fx-gltf/src/bufferinfo.cpp \
 	../../../Libraries/fx-gltf/src/fx/gltf.cpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.cpp \
+	src/Import/import_c16.cpp \
+	src/Import/super_xbr.cpp \
+	src/Import/upscalesprite.cpp \
 	src/Shaders/colorshader.cpp \
 	src/Shaders/defaulttextures.cpp \
 	src/Shaders/defaultvaos.cpp \
@@ -43,7 +46,6 @@ SOURCES += src/main.cpp\
 	src/Sprite/animation.cpp \
 	src/Sprite/document.cpp \
 	src/Sprite/image.cpp \
-	src/Sprite/import_c16.cpp \
 	src/Sprite/material.cpp \
 	src/Sprite/object.cpp \
 	src/Sprite/spritesheet.cpp \
@@ -77,6 +79,9 @@ HEADERS  += src/mainwindow.h \
 	../../../Libraries/fx-gltf/src/fx/gltf.h \
 	../../../Libraries/fx-gltf/src/fx/gltf_forward.hpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.h \
+	src/Import/import_c16.h \
+	src/Import/super_xbr.h \
+	src/Import/upscalesprite.h \
 	src/Shaders/colorshader.h \
 	src/Shaders/defaulttextures.h \
 	src/Shaders/defaultvaos.h \
@@ -89,7 +94,6 @@ HEADERS  += src/mainwindow.h \
 	src/Sprite/animation.h \
 	src/Sprite/document.h \
 	src/Sprite/image.h \
-	src/Sprite/import_c16.h \
 	src/Sprite/material.h \
 	src/Sprite/object.h \
 	src/Sprite/spritesheet.h \

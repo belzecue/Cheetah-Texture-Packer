@@ -173,46 +173,81 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 	fp.read((char*)&no_files, 2);
 	header.resize(no_files);
 
+//read headers
+	uint32_t heap_size = 0;
+
 	for(uint32_t i = 0; i < no_files; ++i)
 	{
 		fp.read((char*)&header[i], sizeof(header[0]));
 
+		heap_size += header[i].width * header[i].height;
+
 		if(header[i].height > 1)
 		{
-			header[i].row_offsets = CountedSizedArray<uint32_t>(header[i].height-1);
-			fp.read((char*)&header[i].row_offsets[0], 4 * header[i].height-1);
+			header[i].row_offsets = CountedSizedArray<uint32_t>(header[i].height);
+			header[i].row_offsets[0] = header[i].offset;
+			fp.read((char*)&header[i].row_offsets[1], 4 * header[i].height-1);
 		}
 	}
 
-	fp.read((char*)&header[0], no_files * header.size());
-
-	auto begin = fp.tellg();
+//load everything into a buffer
 	fp.seekg(0, std::ios_base::end);
-
-	std::unique_ptr<uint8_t[]> file_data(new uint8_t[fp.tellg()]);
+	uint32_t file_size = fp.tellg();
+	std::unique_ptr<uint16_t[]> file_data(new uint16_t[fp.tellg()]);
 	fp.seekg(0, std::ios_base::beg);
+	fp.read((char*)&file_data[0], file_size);
 
-	fp.read(&file_data[0]);
+//allocate sprite
+	SpriteFile r(no_files, heap_size*4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 
-
-
-	SpriteFile r(no_files, heap_size*2, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
-	fp.read((char*)&r.heap[0], heap_size);
-
+//copy sizes
 	for(uint16_t i = 0; i < no_files; ++i)	r.sizes   [i] = glm::u16vec2(header[i].width, header[i].height);
-	for(uint16_t i = 0; i < no_files; ++i)	r.pointers[i] = &r.heap[(header[i].offset - begin)*4];
+
+//set offsets
+	heap_size = 0;
+	for(uint16_t i = 0; i < no_files; ++i)
+	{
+		r.pointers[i] = &r.heap[heap_size];
+		heap_size += (header[i].width * header[i].height) * 4;
+	}
 
 	auto FromUint16 = type? &From565 : &From555;
+	auto endm       = &file_data[file_size-1];
 
-	for(--heap_size; heap_size >= 0; heap_size -= 2)
+	for(uint16_t i = 0; i < no_files; ++i)
 	{
-		glm::u8vec3  src  = FromUint16(*(uint16_t*)&r.heap[heap_size]);
-		glm::u8vec4 & dst = *(glm::u8vec4*)&r.heap[heap_size*2];
+		glm::u8vec4 * image = (glm::u8vec4*)r.pointers[i];
 
-		if(src.x == 0 && src.y == 0 && src.z == 0)
-			dst = glm::u8vec4(0, 0, 0, 0);
-		else
-			dst = glm::u8vec4(src, 255);
+		for(uint32_t y = 0; y < header[i].height; ++i)
+		{
+			uint16_t    * src = &file_data[header[i].row_offsets[i]];
+			glm::u8vec4 * dst = &image[header[i].width*y];
+
+			while(*src && src < endm)
+			{
+				bool transparent = !(*src & 0x0001);
+				uint16_t length  = *src >> 1;
+				++src;
+
+				if(transparent)
+				{
+					memset(&dst, 0, 4 * length);
+					dst += length;
+					continue;
+				}
+
+				for(; length >= 0; ++dst, ++src, --length)
+				{
+					glm::u8vec3 value = FromUint16(*src);
+
+					if(value.x == 0 && value.y == 0 && value.z == 0)
+						*dst = glm::u8vec4(0, 0, 0, 0);
+					else
+						*dst = glm::u8vec4(value, 255);
+
+				}
+			}
+		}
 	}
 
 	return r;
