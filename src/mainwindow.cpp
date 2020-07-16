@@ -280,6 +280,9 @@ void MainWindow::DisplayError(std::string const& what)
 
 #include <QImageReader>
 #include <QStandardPaths>
+#include <QMimeDatabase>
+
+#if USE_BASISU
 
 extern const char * g_ReadMimeTypes[];
 extern const char * g_WriteMimeTypes[];
@@ -292,16 +295,64 @@ static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMo
 		? g_ReadMimeTypes : g_WriteMimeTypes; **p == '\0'; ++p)
 		mimeTypeFilters << *p;
 
-	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
     dialog.setMimeTypeFilters(mimeTypeFilters);
     dialog.selectMimeTypeFilter("image/bmp");
     if (acceptMode == QFileDialog::AcceptSave)
         dialog.setDefaultSuffix("bmp");
 }
 
+#else
+
+static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode)
+{
+	QStringList mimeTypeFilters;
+	QByteArrayList supportedMimeTypes;
+
+	if(acceptMode == QFileDialog::AcceptOpen)
+		supportedMimeTypes = QImageReader::supportedMimeTypes();
+	else
+		supportedMimeTypes = QImageWriter::supportedMimeTypes();
+
+	foreach(const QByteArray& mimeTypeName, supportedMimeTypes)
+	{
+		mimeTypeFilters.append(mimeTypeName);
+	}
+
+	mimeTypeFilters.sort(Qt::CaseInsensitive);
+
+	// compose filter for all supported types
+	QMimeDatabase mimeDB;
+	QStringList allSupportedFormats;
+	for(const QString& mimeTypeFilter: mimeTypeFilters)
+	{
+		QMimeType mimeType = mimeDB.mimeTypeForName(mimeTypeFilter);
+
+		if(mimeType.isValid())
+		{
+			allSupportedFormats.append(mimeType.globPatterns());
+		}
+	}
+
+	QString allSupportedFormatsFilter = QString("All supported formats (%1)").arg(allSupportedFormats.join(' '));
+
+	dialog.setMimeTypeFilters(mimeTypeFilters);
+	QStringList nameFilters = dialog.nameFilters();
+	nameFilters.append(allSupportedFormatsFilter);
+	dialog.setNameFilters(nameFilters);
+	dialog.selectNameFilter(allSupportedFormatsFilter);
+
+	if(acceptMode == QFileDialog::AcceptOpen)
+		dialog.setFileMode(QFileDialog::ExistingFile);
+	else
+		dialog.setFileMode(QFileDialog::AnyFile);
+}
+
+#endif
 std::string MainWindow::GetImage()
 {
 	QFileDialog dialog(this, tr("Open File"));
+	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+
     initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
 
     if(dialog.exec() == QDialog::Accepted)

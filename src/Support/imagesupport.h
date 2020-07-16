@@ -9,12 +9,18 @@
 
 #undef LoadImage
 
+#define USE_BASISU 0
+
 class GLViewWidget;
 
+#if USE_BASISU
 namespace basisu
 {
 class image;
 }
+#else
+class QImage;
+#endif
 
 namespace IO
 {
@@ -37,16 +43,22 @@ typedef std::unique_ptr<uint8_t[], std_free> ImageData;
 	struct Image
 	{
 		ImageData    image{nullptr};
-		glm::i16vec2 size;
-		uint32_t     channels;
+		glm::i16vec2 size{0, 0};
+		uint32_t     format{};
+		uint32_t     internalFormat{};
+		uint32_t     type{};
 	};
 
 	IO::Image LoadImage(const char * path);
 	void SaveImage(const char * path, uint8_t * data, glm::i16vec2 size, int channels);
 
-	void UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm::i16vec2 size, int channels);
+	void UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm::i16vec2 size, uint32_t internal_format, uint32_t format, uint32_t type);
 	void DownloadImage(GLViewWidget *, Image &,  uint32_t);
+#if USE_BASISU
 	void DownloadImage(GLViewWidget *, basisu::image &,  uint32_t);
+#else
+	void DownloadImage(GLViewWidget *, QImage &,  uint32_t);
+#endif
 
 	glm::i16vec4 GetSprite(uint8_t * data, glm::i16vec2 size, int channels, glm::i16vec2 tl, uint32_t color);
 	glm::i16vec4 GetCrop  (const uint8_t * data, glm::i16vec2 size, int channels, glm::i16vec4 aabb, uint32_t greenMask, uint32_t greenScreen);

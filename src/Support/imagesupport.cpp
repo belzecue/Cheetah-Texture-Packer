@@ -8,148 +8,26 @@
 #include <glm/glm.hpp>
 #include <cctype>
 #include <cstring>
+#include "lf_math.h"
 
+#if USE_BASISU
 
-const char * g_ReadMimeTypes[] =
-{
-"image/jpg",
-"image/png",
-"image/bmp"
-""
-};
+#else
+#include <QImageReader>
+#include <QImageWriter>
+#include <QImage>
+#endif
 
-const char * g_WriteMimeTypes[] =
-{
-"image/png",
-"image/bmp"
-""
-};
 
 #undef LoadImage
 
-IO::Image IO::LoadImage(const char * path)
+
+namespace Qt_to_GL
 {
-	IO::Image image;
-
-	switch(GetFormat(path))
-	{
-	case IO::Format::Unknown:
-		throw std::runtime_error(std::string(path) + "\n Unkown Image Format");
-	case IO::Format::None:
-		return image;
-	case IO::Format::BMP:
-	{
-		uint32_t compz{};
-		int width{}, height{};
-		auto data = apg_bmp_read(path, &width, &height, &compz);
-
-		image.image.reset(data);
-		image.size = glm::ivec2(width, height);
-		image.channels = compz;
-		return image;
-	}
-	case IO::Format::JPEG:
-	{
-		int compz, width, height;
-		auto data = jpgd::decompress_jpeg_image_from_file(path, &width, &height, &compz, 4, 0);
-
-		image.image.reset(data);
-		image.size = glm::ivec2(width, height);
-		image.channels = compz;
-		break;
-	}
-	case IO::Format::PNG:
-	{
-		uint32_t x, y;
-		uint8_t * data{nullptr};
-		auto r = lodepng_decode32_file(&data, &x, &y, path);
-
-		if(r != 0)
-			throw std::runtime_error("problem reading png");
-
-		image.image.reset(data);
-		image.size = glm::ivec2(x, y);
-		image.channels = 4;
-		break;
-	} break;
-	default:
-		throw std::logic_error("unhandled image format");
-	}
-
-	return image;
+uint32_t bytesPerPixel(uint32_t type);
 }
 
-void IO::SaveImage(const char * path, uint8_t * data, glm::i16vec2 size, int channels)
-{
-	switch(GetFormat(path))
-	{
-	case IO::Format::Unknown:
-		throw std::runtime_error("Problem saving: " + std::string(path) + "\n Unknown image format.");
-	case IO::Format::None:
-		return;
-	case IO::Format::BMP:
-		if(!apg_bmp_write(path, data, size.x, size.y, channels))
-			throw std::runtime_error("Problem saving bitmap: " + std::string(path));
-		break;
-	case IO::Format::JPEG:
-	{
-		throw std::runtime_error("Problem saving: " + std::string(path) + "\n Saving jpegs is unsupported at this time.");
-		break;
-	}
-	case IO::Format::PNG:
-	{
-		LodePNGColorType types[] = { LCT_GREY, LCT_GREY_ALPHA, LCT_RGB, LCT_RGBA };
-		if(lodepng_encode_file(path, data, size.x, size.y, types[channels % 4], 8))
-			throw std::runtime_error("Problem saving png: " + std::string(path));
-	} break;
-	default:
-		throw std::logic_error("unhandled image format");
-	}
-}
-
-IO::Format IO::GetFormat(const char * path, int length)
-{
-	struct FormatTable
-	{
-		const char * extension;
-		uint8_t        length;
-		IO::Format format;
-	};
-
-	static FormatTable table[] =
-	{
-	{ ".bmp",   4, IO::Format::BMP },
-	{ ".jpg",   4, IO::Format::JPEG },
-	{ ".jpeg",  5, IO::Format::JPEG },
-	{ ".png",   4, IO::Format::PNG },
-	//{ ".tga", 4, IO::Format::TGA },
-	{ nullptr,  0, IO::Format::None }
-	};
-
-	if(path == nullptr)
-		return Format::None;
-
-	for(FormatTable * fmt = table; fmt->extension; ++fmt)
-	{
-//		std::cerr << "checking format: " << fmt->extension << std::endl;
-
-		auto ext = fmt->extension + fmt->length;
-		auto pth = path + (length >= 0? length : strlen(path));
-
-		for(;ext >= fmt->extension && pth >= path; --pth, --ext)
-		{
-			if(*ext != tolower(*pth))
-				break;
-
-			if(*ext == '.')
-				return fmt->format;
-		}
-	}
-
-	return Format::Unknown;
-}
-
-void IO::UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm::i16vec2 size, int channels)
+void IO::UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm::i16vec2 size, uint32_t internal_format, uint32_t format, uint32_t type)
 {
 	GL_ASSERT;
 
@@ -171,16 +49,14 @@ void IO::UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm:
 
 	_gl glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
-	GLenum type[4] = { GL_RED, GL_RG, GL_RGB, GL_RGBA };
-
 	_gl glTexImage2D(GL_TEXTURE_2D,
 			0,
-			type[channels-1],
+			internal_format,
 			size.x,
 			size.y,
 			0,
-			type[channels-1],
-			GL_UNSIGNED_BYTE,
+			format,
+			type,
 			&data[0]);
 
 	GL_ASSERT;
@@ -358,6 +234,7 @@ glm::i16vec4 IO::GetCrop  (uint8_t const* data, glm::i16vec2 size, int channels,
 	return glm::i16vec4(glm::min(min, max) + glm::i16vec2(aabb.x, aabb.y), max + glm::i16vec2(aabb.x, aabb.y));
 }
 
+
 void IO::DownloadImage(GLViewWidget * gl, IO::Image & image,  uint32_t texture)
 {
 	GL_ASSERT;
@@ -372,30 +249,12 @@ void IO::DownloadImage(GLViewWidget * gl, IO::Image & image,  uint32_t texture)
 	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
 	image.size = glm::ivec2(width, height);
-	image.image.reset(new uint8_t[width*height*4]);
+	image.image.reset(new uint8_t[width*height*Qt_to_GL::bytesPerPixel(image.type)]);
 
-	_gl glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, &image.image[0]);
+	_gl glGetTexImage(GL_TEXTURE_2D, 0, image.internalFormat, image.type, &image.image[0]);
 	GL_ASSERT;
 }
 
-void IO::DownloadImage(GLViewWidget * gl, basisu::image & image,  uint32_t texture)
-{
-	GL_ASSERT;
-	(void)gl;
-
-	if(texture == 0)
-		return;
-
-	int width, height;
-	_gl glBindTexture(GL_TEXTURE_2D, texture);
-	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH , &width);
-	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-
-	image.resize(width, height);
-
-	_gl glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, image.get_ptr());
-	GL_ASSERT;
-}
 
 bool IO::CheckDynamics(std::string & error, float & size_ratio, CountedSizedArray<glm::i16vec4> A, CountedSizedArray<glm::i16vec4> B)
 {
@@ -434,3 +293,231 @@ bool IO::CheckDynamics(std::string & error, float & size_ratio, CountedSizedArra
 	return true;
 }
 
+#if !USE_BASISU
+#include "Support/qt_to_gl.h"
+#include <QImageReader>
+#include <QImageWriter>
+#include <QImage>
+#include <QString>
+#include <QDir>
+
+void IO::DownloadImage(GLViewWidget * gl, QImage & image,  uint32_t texture)
+{
+	GL_ASSERT;
+	(void)gl;
+
+	if(texture == 0)
+		return;
+
+	int width, height;
+	_gl glBindTexture(GL_TEXTURE_2D, texture);
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH , &width);
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+	uint8_t * ptr = (uint8_t*) malloc(width*height*4);
+	_gl glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, ptr);
+
+	image = QImage(ptr, width, height, 4*width, QImage::Format_ARGB32, &std::free, ptr);
+
+	GL_ASSERT;
+}
+
+IO::Image IO::LoadImage(const char * path)
+{
+	QImageReader reader(path);
+	reader.setAutoTransform(true);
+	QImage newImage = reader.read();
+
+	if (newImage.isNull()) {
+		throw std::runtime_error(
+			QString("Cannot load %1: %2").arg(
+				QDir::toNativeSeparators(path),
+				reader.errorString()).toStdString());
+    }
+
+	IO::Image image;
+//convert image to proper format
+
+	QImage::Format GetTargetFormat(QImage::Format in, QImage::Format);
+
+	auto format = Qt_to_Gl::GetTargetFormat(newImage.format());
+
+	if(format != newImage.format())
+		newImage = newImage.convertToFormat(format,
+			Qt::AutoColor
+			| Qt::DiffuseDither
+			| Qt::DiffuseAlphaDither
+			| Qt::PreferDither);
+
+	image.size = glm::i16vec2(newImage.width(), newImage.height());
+	image.format         = Qt_to_GL::GetFormat(format);
+	image.internalFormat = Qt_to_GL::GetInternalFormat(format);
+	image.type           = Qt_to_GL::GetType(format);
+
+	size_t size = image.size.x*image.size.y*Qt_to_GL::bytesPerPixel(image.type);
+	image.image.reset(new uint8_t[image.size.x*image.size.y*Qt_to_GL::bytesPerPixel(image.type)]);
+
+	memcpy(&image.image[0], newImage.constBits(), size);
+
+	return image;
+}
+
+#else //USE_BASISU
+
+const char * g_ReadMimeTypes[] =
+{
+"image/jpg",
+"image/png",
+"image/bmp"
+""
+};
+
+const char * g_WriteMimeTypes[] =
+{
+"image/png",
+"image/bmp"
+""
+};
+
+IO::Format IO::GetFormat(const char * path, int length)
+{
+	struct FormatTable
+	{
+		const char * extension;
+		uint8_t        length;
+		IO::Format format;
+	};
+
+	static FormatTable table[] =
+	{
+	{ ".bmp",   4, IO::Format::BMP },
+	{ ".jpg",   4, IO::Format::JPEG },
+	{ ".jpeg",  5, IO::Format::JPEG },
+	{ ".png",   4, IO::Format::PNG },
+	//{ ".tga", 4, IO::Format::TGA },
+	{ nullptr,  0, IO::Format::None }
+	};
+
+	if(path == nullptr)
+		return Format::None;
+
+	for(FormatTable * fmt = table; fmt->extension; ++fmt)
+	{
+//		std::cerr << "checking format: " << fmt->extension << std::endl;
+
+		auto ext = fmt->extension + fmt->length;
+		auto pth = path + (length >= 0? length : strlen(path));
+
+		for(;ext >= fmt->extension && pth >= path; --pth, --ext)
+		{
+			if(*ext != tolower(*pth))
+				break;
+
+			if(*ext == '.')
+				return fmt->format;
+		}
+	}
+
+	return Format::Unknown;
+}
+
+IO::Image IO::LoadImage(const char * path)
+{
+	IO::Image image;
+
+	switch(GetFormat(path))
+	{
+	case IO::Format::Unknown:
+		throw std::runtime_error(std::string(path) + "\n Unkown Image Format");
+	case IO::Format::None:
+		return image;
+	case IO::Format::BMP:
+	{
+		uint32_t compz{};
+		int width{}, height{};
+		auto data = apg_bmp_read(path, &width, &height, &compz);
+
+		image.image.reset(data);
+		image.size = glm::ivec2(width, height);
+		image.channels = compz;
+		return image;
+	}
+	case IO::Format::JPEG:
+	{
+		int compz, width, height;
+		auto data = jpgd::decompress_jpeg_image_from_file(path, &width, &height, &compz, 4, 0);
+
+		image.image.reset(data);
+		image.size = glm::ivec2(width, height);
+		image.channels = compz;
+		break;
+	}
+	case IO::Format::PNG:
+	{
+		uint32_t x, y;
+		uint8_t * data{nullptr};
+		auto r = lodepng_decode32_file(&data, &x, &y, path);
+
+		if(r != 0)
+			throw std::runtime_error("problem reading png");
+
+		image.image.reset(data);
+		image.size = glm::ivec2(x, y);
+		image.channels = 4;
+		break;
+	} break;
+	default:
+		throw std::logic_error("unhandled image format");
+	}
+
+	return image;
+}
+
+void IO::SaveImage(const char * path, uint8_t * data, glm::i16vec2 size, int channels)
+{
+	switch(GetFormat(path))
+	{
+	case IO::Format::Unknown:
+		throw std::runtime_error("Problem saving: " + std::string(path) + "\n Unknown image format.");
+	case IO::Format::None:
+		return;
+	case IO::Format::BMP:
+		if(!apg_bmp_write(path, data, size.x, size.y, channels))
+			throw std::runtime_error("Problem saving bitmap: " + std::string(path));
+		break;
+	case IO::Format::JPEG:
+	{
+		throw std::runtime_error("Problem saving: " + std::string(path) + "\n Saving jpegs is unsupported at this time.");
+		break;
+	}
+	case IO::Format::PNG:
+	{
+		LodePNGColorType types[] = { LCT_GREY, LCT_GREY_ALPHA, LCT_RGB, LCT_RGBA };
+		if(lodepng_encode_file(path, data, size.x, size.y, types[channels % 4], 8))
+			throw std::runtime_error("Problem saving png: " + std::string(path));
+	} break;
+	default:
+		throw std::logic_error("unhandled image format");
+	}
+}
+
+void IO::DownloadImage(GLViewWidget * gl, basisu::image & image,  uint32_t texture)
+{
+	GL_ASSERT;
+	(void)gl;
+
+	if(texture == 0)
+		return;
+
+	int width, height;
+	_gl glBindTexture(GL_TEXTURE_2D, texture);
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH , &width);
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+	image.resize(width, height);
+
+	_gl glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, image.get_ptr());
+	GL_ASSERT;
+}
+
+#endif
