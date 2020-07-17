@@ -205,6 +205,7 @@ sx, sy
 
 */
 
+static inline
 float diagonal_edge(float mat[][4], float *wp) {
 	float dw1 = wp[0]*(df(mat[0][2], mat[1][1]) + df(mat[1][1], mat[2][0]) + df(mat[1][3], mat[2][2]) + df(mat[2][2], mat[3][1])) +\
 				wp[1]*(df(mat[0][3], mat[1][2]) + df(mat[2][1], mat[3][0])) + \
@@ -224,6 +225,7 @@ float diagonal_edge(float mat[][4], float *wp) {
 }
 
 // Not used yet...
+static inline
 float cross_edge(float mat[][4], float *wp) {
 	float hvw1 = wp[3] * (df(mat[1][1], mat[2][1]) + df(mat[1][2], mat[2][2])) + \
 				 wp[0] * (df(mat[0][1], mat[1][1]) + df(mat[2][1], mat[3][1]) + df(mat[0][2], mat[1][2]) + df(mat[2][2], mat[3][2])) + \

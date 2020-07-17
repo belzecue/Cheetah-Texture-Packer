@@ -13,6 +13,7 @@
 #if USE_BASISU
 
 #else
+#include "Support/qt_to_gl.h"
 #include <QImageReader>
 #include <QImageWriter>
 #include <QImage>
@@ -20,12 +21,6 @@
 
 
 #undef LoadImage
-
-
-namespace Qt_to_GL
-{
-uint32_t bytesPerPixel(uint32_t type);
-}
 
 void IO::UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm::i16vec2 size, uint32_t internal_format, uint32_t format, uint32_t type)
 {
@@ -243,13 +238,19 @@ void IO::DownloadImage(GLViewWidget * gl, IO::Image & image,  uint32_t texture)
 	if(texture == 0)
 		return;
 
-	int width, height;
+	int width{}, height{};
 	_gl glBindTexture(GL_TEXTURE_2D, texture);
 	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH , &width);
 	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT , (int*)&image.internalFormat);
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, (int*)&image.type);
+
 	image.size = glm::ivec2(width, height);
-	image.image.reset(new uint8_t[width*height*Qt_to_GL::bytesPerPixel(image.type)]);
+	image.format = Qt_to_Gl::GetFormatFromInternalFormat(image.internalFormat);
+	image.type = Qt_to_Gl::GetTypeFromInternalFormat(image.internalFormat);
+
+	image.image.reset(new uint8_t[image.size.x * image.size.y * Qt_to_Gl::GetPixelByteWidth(image.format, image.type)]);
 
 	_gl glGetTexImage(GL_TEXTURE_2D, 0, image.internalFormat, image.type, &image.image[0]);
 	GL_ASSERT;
@@ -340,7 +341,7 @@ IO::Image IO::LoadImage(const char * path)
 
 	QImage::Format GetTargetFormat(QImage::Format in, QImage::Format);
 
-	auto format = Qt_to_Gl::GetTargetFormat(newImage.format());
+	auto format = Qt_to_Gl::ImageUsesAlpha(newImage)? QImage::Format_ARGB32 : QImage::Format_RGB888; //Qt_to_Gl::GetTargetFormat(newImage);
 
 	if(format != newImage.format())
 		newImage = newImage.convertToFormat(format,
@@ -350,12 +351,12 @@ IO::Image IO::LoadImage(const char * path)
 			| Qt::PreferDither);
 
 	image.size = glm::i16vec2(newImage.width(), newImage.height());
-	image.format         = Qt_to_GL::GetFormat(format);
-	image.internalFormat = Qt_to_GL::GetInternalFormat(format);
-	image.type           = Qt_to_GL::GetType(format);
+	image.format         = Qt_to_Gl::GetFormat(format);
+	image.internalFormat = Qt_to_Gl::GetInternalFormat(format);
+	image.type           = Qt_to_Gl::GetType(format);
 
-	size_t size = image.size.x*image.size.y*Qt_to_GL::bytesPerPixel(image.type);
-	image.image.reset(new uint8_t[image.size.x*image.size.y*Qt_to_GL::bytesPerPixel(image.type)]);
+	size_t size = image.size.y*newImage.bytesPerLine();
+	image.image.reset(new uint8_t[size]);
 
 	memcpy(&image.image[0], newImage.constBits(), size);
 

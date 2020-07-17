@@ -9,6 +9,8 @@
 #include <cstring>
 #include <climits>
 
+#include "Support/qt_to_gl.h"
+
 #include "widgets/glviewwidget.h"
 
 #undef LoadImage
@@ -76,15 +78,15 @@ void Image::LoadFromFile()
 
 	auto image = IO::LoadImage(m_path.c_str());
 	m_size      = image.size;
-	m_channels  = image.channels;
+	m_channels  = Qt_to_Gl::GetChannelsFromFormat(image.format);
 
 	m_ownsTexture = true;
-	IO::UploadImage(gl, &m_texture, &image.image[0], image.size, image.channels);
+	IO::UploadImage(gl, &m_texture, &image.image[0], image.size, image.internalFormat, image.format, image.type);
 
 	if(m_sprites.empty())
 	{
-		m_sprites    = IO::GetSprites(&image.image[0], image.size, image.channels);
-		m_cropped    = IO::GetCrop(&image.image[0], image.size, image.channels, m_sprites);
+		m_sprites    = IO::GetSprites(&image.image[0], image.size, m_channels);
+		m_cropped    = IO::GetCrop(&image.image[0], image.size, m_channels, m_sprites);
 	//	m_cropped    = m_sprites;
 		m_normalized = IO::NormalizeCrop(m_cropped, image.size);
 

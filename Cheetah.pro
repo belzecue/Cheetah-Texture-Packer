@@ -6,6 +6,8 @@
 
 QT += core gui
 
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
 TARGET = cheetah-texture-packer
 
 QT_VERSION=$$[QT_VERSION]
@@ -25,7 +27,7 @@ LIBS += -lGLEW -lGL -lGLU -ldrm
 
 CONFIG += c++14
 
-DEFINES += GLM_EXT_INCLUDED \"_gl=gl->\"
+DEFINES += QT_DEPRECATED_WARNINGS GLM_EXT_INCLUDED \"_gl=gl->\"
 
 SOURCES += src/main.cpp\
 	../../../Libraries/fx-gltf/src/bufferinfo.cpp \
@@ -68,7 +70,6 @@ SOURCES += src/main.cpp\
     src/parsearguments.cpp \
     src/widgets/qclickablelabel.cpp \
     src/settingspanel.cpp \
-    src/superxbrscaler.cpp \
     src/rc_crc32.c
 
 HEADERS  += src/mainwindow.h \
@@ -120,24 +121,9 @@ HEADERS  += src/mainwindow.h \
     src/parsearguments.h \
     src/widgets/qclickablelabel.h \
     src/settingspanel.h \
-    src/superxbrscaler.h \
     src/widgets/qconstrainedspinbox.hpp \
     src/qimageptr.hpp \
     src/rc_crc32.h
 
 FORMS    += src/mainwindow.ui
 
-TRANSLATIONS += src/tile_ru.ts
-
-DISTFILES += \
-	../../../Libraries/basis_universal/LICENSE \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_astc.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_astc_0_255.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_atc_55.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_atc_56.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_bc7_m5_alpha.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_bc7_m5_color.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_dxt1_5.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_dxt1_6.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_pvrtc2_45.inc \
-	../../../Libraries/basis_universal/transcoder/basisu_transcoder_tables_pvrtc2_alpha_33.inc

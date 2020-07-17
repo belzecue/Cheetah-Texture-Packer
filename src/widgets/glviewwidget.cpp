@@ -134,9 +134,9 @@ void GLViewWidget::initializeGL()
 	logger->initialize();
 
 	connect(logger, &QOpenGLDebugLogger::messageLogged, this, &GLViewWidget::handleLoggedMessage);
-    logger->startLogging();
 
 	glAssert();
+ //   logger->startLogging(); glAssert();
 }
 
 typedef std::pair<int, const char*> Flag;
