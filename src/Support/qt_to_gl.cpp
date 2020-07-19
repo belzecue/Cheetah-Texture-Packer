@@ -130,14 +130,14 @@ uint32_t GetInternalFormat(QImage::Format in)
 
 bool           ImageUsesAlpha(const QImage & in)
 {
-	if(in.hasAlphaChannel())
+	if(!in.hasAlphaChannel())
 		return false;
 
 	for(auto y = 0; y < in.height(); ++y)
 	{
 		for(auto x = 0; x < in.width(); ++x)
 		{
-			if(QColor(in.pixel(x,y)).alpha() != 255)
+			if(qAlpha(in.pixel(x,y)) != 255)
 				return true;
 		}
 	}
