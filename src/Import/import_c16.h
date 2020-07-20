@@ -5,16 +5,10 @@
 #include "Support/countedsizedarray.hpp"
 #include <glm/gtc/type_precision.hpp>
 
-class SpriteFile;
-typedef std::unique_ptr<SpriteFile> SpritePtr;
-
 class SpriteFile
 {
 public:
 	static SpriteFile OpenSprite(const char * path);
-	static SpriteFile ReadSpr(const char * path);
-	static SpriteFile ReadC16(const char * path);
-	static SpriteFile ReadS16(const char * path);
 
 	SpriteFile() = default;
 	SpriteFile(SpriteFile const& file) :
@@ -27,7 +21,6 @@ public:
 		type(file.type)
 	{
 	}
-	SpriteFile(uint32_t size, uint32_t heap_size, uint32_t internal_format, uint32_t format, uint32_t type);
 
 	auto size() const { return count; }
 	bool empty() const { return !count; }
@@ -40,6 +33,14 @@ public:
 	uint32_t                        internal_format{};
 	uint32_t                        format{};
 	uint32_t                        type{};
+
+private:
+	SpriteFile(uint32_t size, uint32_t heap_size, uint32_t internal_format, uint32_t format, uint32_t type);
+
+	static SpriteFile ReadSpr(const char * path);
+	static SpriteFile ReadC16(const char * path);
+	static SpriteFile ReadS16(const char * path);
+
 };
 
 

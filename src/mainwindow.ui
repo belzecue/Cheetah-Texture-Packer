@@ -149,8 +149,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>59</width>
-           <height>602</height>
+           <width>65</width>
+           <height>604</height>
           </rect>
          </property>
         </widget>
@@ -167,7 +167,7 @@
      <x>0</x>
      <y>0</y>
      <width>1092</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -180,6 +180,8 @@
     <addaction name="separator"/>
     <addaction name="fileSave"/>
     <addaction name="fileSaveAs"/>
+    <addaction name="separator"/>
+    <addaction name="fileImportSpr"/>
     <addaction name="separator"/>
     <addaction name="fileImport"/>
     <addaction name="fileExport"/>
@@ -317,6 +319,9 @@
    </property>
   </action>
   <action name="fileExport">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset theme="document-export">
      <normaloff>.</normaloff>.</iconset>
@@ -488,6 +493,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+=</string>
+   </property>
+  </action>
+  <action name="fileImportSpr">
+   <property name="text">
+    <string>Import Sprite...</string>
+   </property>
+   <property name="toolTip">
+    <string>Import SPR/S16/C16</string>
    </property>
   </action>
  </widget>

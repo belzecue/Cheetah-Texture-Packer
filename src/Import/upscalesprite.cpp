@@ -18,7 +18,7 @@ void xBrLoop(std::vector<uint32_t> & pixel_data, int & width, int & height)
 }
 
 
-SpriteFile double_image(SpriteFile image)
+SpriteFile double_image(SpriteFile const& image)
 {
 	if(image.format != GL_RGBA
 	|| image.type   != GL_UNSIGNED_BYTE)

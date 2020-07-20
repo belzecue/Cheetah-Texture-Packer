@@ -76,7 +76,7 @@ void Image::LoadFromFile()
 	auto gl = m_manager->gl;
 	gl->makeCurrent();
 
-	auto image = IO::LoadImage(m_path.c_str());
+	auto image  = IO::LoadImage(m_path.c_str());
 	m_size      = image.size;
 	m_channels  = Qt_to_Gl::GetChannelsFromFormat(image.format);
 

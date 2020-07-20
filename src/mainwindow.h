@@ -73,6 +73,8 @@ public:
 
 private:
 	void onSave();
+	void ImportSprite();
+	std::string GetSpritePath();
 	void displayStatus(quint64 image_area, quint64 packer_area, quint64 neededArea, int missingImages, int mergedImages);
 
 	View   * m_view;

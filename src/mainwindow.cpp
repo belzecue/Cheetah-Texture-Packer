@@ -4,6 +4,7 @@
 #include "settingspanel.h"
 #include "packersettings.h"
 #include "widgets/spritemodel.h"
+#include "commandlist.h"
 #include "support.h"
 #include <QFileDialog>
 #include <QMessageBox>
@@ -78,49 +79,20 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->statusBar->addWidget(m_status);
 	ui->statusBar->addPermanentWidget(m_scale);
 
-	connect(ui->editUndo,  &QAction::triggered,  this, [this]() { document->editUndo(); });
-	connect(ui->editRedo,  &QAction::triggered,  this, [this]() { document->editRedo(); });
+	connect(ui->editUndo,    &QAction::triggered,  this, [this]() { document->editUndo(); });
+	connect(ui->editRedo,    &QAction::triggered,  this, [this]() { document->editRedo(); });
+	connect(ui->fileImportSpr,  &QAction::triggered,  this, &MainWindow::ImportSprite);
 
 //	QComboBoxChanged qComboBoxChanged = &QComboBox::currentIndexChanged;
 //connnect things state set to ensure auto update doesn't go off.
-	/*
-	connect(ui->d_heuristic,         qComboBoxChanged, this, &MainWindow::updateAuto);
-	connect(ui->d_sortOrder,         qComboBoxChanged, this, &MainWindow::updateAuto);
-	connect(ui->d_rotationStrategy,  qComboBoxChanged, this, &MainWindow::updateAuto);
-
 	connect(ui->c_previewWithImages, &QAction::toggled,               this, &MainWindow::updateAuto);
-	connect(ui->c_merge,             &QCheckBox::stateChanged,        this, &MainWindow::updateAuto);
-	connect(ui->c_autosize,          &QCheckBox::stateChanged,        this, &MainWindow::updateAuto);
-	connect(ui->c_square,            &QCheckBox::stateChanged,        this, &MainWindow::updateAuto);
-
-	connect(ui->c_greenScreen,       &QCheckBox::stateChanged,        this, &MainWindow::updateAuto);
-	connect(ui->c_greenScreenAlpha,  &QCheckBox::stateChanged,        this, &MainWindow::updateAuto);
-	connect(ui->t_greenScreenColor,  &QLineEdit::editingFinished,     this, &MainWindow::updateAuto);
-	*/
 
 	//QSpinBoxChanged qSpinBoxChanged = &QSpinBox::valueChanged;
-	/*
-	connect(ui->s_borderBottom,      qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_borderRight,       qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_borderTop,         qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_borderLeft,        qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_textureW,          qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_textureH,          qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_extrude,           qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_minFillRate,       qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_alignX,            qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	connect(ui->s_alignY,            qSpinBoxChanged,         this, &MainWindow::updateAuto);
-	*/
+
+
 
 
     connect(ui->fileClose,   &QAction::triggered, this, &MainWindow::clearTiles);
-/*
-    connect(ui->m_zoom25,  &QAction::triggered, [this]() {  m_view->changeZoom(.25); } );
-    connect(ui->m_zoom50,  &QAction::triggered, [this]() {  m_view->changeZoom(.50); } );
-    connect(ui->m_zoom100, &QAction::triggered, [this]() {  m_view->changeZoom(1.0); } );
-    connect(ui->m_zoom200, &QAction::triggered, [this]() {  m_view->changeZoom(2.0); } );
-    connect(ui->m_zoom400, &QAction::triggered, [this]() {  m_view->changeZoom(4.0); } );
-    connect(ui->m_zoom800, &QAction::triggered, [this]() {  m_view->changeZoom(8.0); } );*/
 
     connect(ui->zoomIn , &QAction::triggered, [this]() { SetZoom(m_zoom * 9 / 8.f); } );
     connect(ui->zoomOut, &QAction::triggered, [this]() { SetZoom(m_zoom * 8 / 9.f);  } );
@@ -130,17 +102,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	connect(m_delete, &QShortcut::activated, this, &MainWindow::deleteSelectedTiles);
 
-	/*
-	connect(ui->b_update, SIGNAL(clicked()), MainWindow, SLOT(packerUpdate()));
-	connect(ui->b_getFolder, SIGNAL(clicked()), MainWindow, SLOT(getFolder()));
-	connect(ui->b_Export, SIGNAL(clicked()), MainWindow, SLOT(exportImage()));
-	connect(ui->d_scale, SIGNAL(currentIndexChanged(QString)), widget, SLOT(rescale(QString)));
-	connect(ui->b_addTiles, SIGNAL(clicked()), MainWindow, SLOT(addTiles()));
-	connect(ui->b_removeTiles, SIGNAL(clicked()), MainWindow, SLOT(deleteSelectedTiles()));
-	connect(ui->b_swapSizes, SIGNAL(clicked()), MainWindow, SLOT(swapSizes()));
-	connect(ui->b_clearTiles, SIGNAL(clicked()), MainWindow, SLOT(clearTiles()));
-	connect(ui->s_alphaThreshold, &QSpinBox::valueChanged, MainWindow, SLOT(updateAplhaThreshold()));
-*/
 	connect(ui->fileNew, &QAction::triggered, []()
 	{
 		MainWindow * window = new MainWindow();
@@ -303,16 +264,17 @@ static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMo
 
 #else
 
-static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode)
+static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode, QByteArrayList supportedMimeTypes = {})
 {
+	if(supportedMimeTypes.empty())
+	{
+		if(acceptMode == QFileDialog::AcceptOpen)
+			supportedMimeTypes = QImageReader::supportedMimeTypes();
+		else
+			supportedMimeTypes = QImageWriter::supportedMimeTypes();
+	}
+
 	QStringList mimeTypeFilters;
-	QByteArrayList supportedMimeTypes;
-
-	if(acceptMode == QFileDialog::AcceptOpen)
-		supportedMimeTypes = QImageReader::supportedMimeTypes();
-	else
-		supportedMimeTypes = QImageWriter::supportedMimeTypes();
-
 	foreach(const QByteArray& mimeTypeName, supportedMimeTypes)
 	{
 		mimeTypeFilters.append(mimeTypeName);
@@ -334,11 +296,9 @@ static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMo
 	}
 
 	QString allSupportedFormatsFilter = QString("All supported formats (%1)").arg(allSupportedFormats.join(' '));
+	mimeTypeFilters.append(allSupportedFormatsFilter);
 
-	dialog.setMimeTypeFilters(mimeTypeFilters);
-	QStringList nameFilters = dialog.nameFilters();
-	nameFilters.append(allSupportedFormatsFilter);
-	dialog.setNameFilters(nameFilters);
+	dialog.setNameFilters(mimeTypeFilters);
 	dialog.selectNameFilter(allSupportedFormatsFilter);
 
 	if(acceptMode == QFileDialog::AcceptOpen)
@@ -362,6 +322,49 @@ std::string MainWindow::GetImage()
 
 	return std::string();
 }
+
+std::string MainWindow::GetSpritePath()
+{
+	QFileDialog dialog(this, tr("Open Sprite"));
+	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+
+    initializeImageFileDialog(dialog, QFileDialog::AcceptOpen, { "sprite/spr", "sprite/s16", "sprite/c16"} );
+
+    if(dialog.exec() == QDialog::Accepted)
+	{
+		return dialog.selectedFiles().first().toStdString();
+	}
+
+	return std::string();
+}
+
+void MainWindow::ImportSprite()
+{
+	std::string path;
+
+	try
+	{
+		path = GetSpritePath();
+
+		if(path.empty())
+			return;
+
+		auto image = Image::Factory(&document->imageManager, path);
+
+		auto command  = std::make_unique<ObjectCommand>(document->objects.size(), image->GetFilename());
+		auto material = command->GetObject().get()->material.get();
+		material->unlit.is_empty = false;
+		material->SetImage(image, &material->image_slots[(int)Material::Tex::BaseColor]);
+
+		document->addCommand(std::move(command));
+	}
+	catch(std::exception & e)
+	{
+		QMessageBox::warning(0, tr("Import failed"),
+			tr("Problem opening file: ") + QString::fromStdString(path) + "\n" + e.what());
+	}
+}
+
 
 bool MainWindow::selectTiles(int texture, QRect rect, Qt::KeyboardModifiers keys)
 {

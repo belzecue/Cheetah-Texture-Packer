@@ -34,7 +34,7 @@ struct Document
 	void Release() { if(--m_refCount == 0) delete this; }
 
 	template<typename T, typename...Args>
-	void addCommand(Args&&... args)
+	T * addCommand(Args&&... args)
 	{
 		std::unique_ptr<T> r;
 		try
@@ -46,11 +46,10 @@ struct Document
 			OnError(e.what());
 		}
 
-		addCommand(std::move(r));
-		return;
+		return addCommand(std::move(r));
 	}
 
-	void addCommand(std::unique_ptr<CommandInterface> );
+	CommandInterface * addCommand(std::unique_ptr<CommandInterface> );
 
 	void editUndo();
 	void editRedo();

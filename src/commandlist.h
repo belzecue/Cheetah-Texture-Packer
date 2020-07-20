@@ -46,9 +46,10 @@ public:
 	ObjectCommand(Document * doc, int object, std::string insert);
 	virtual ~ObjectCommand() = default;
 
+	counted_ptr<Object> const& GetObject() const { return object; };
+
 	void RollForward();
 	void RollBack();
-
 
 private:
 	Document          * doc{};
