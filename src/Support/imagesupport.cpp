@@ -231,8 +231,10 @@ glm::i16vec4 IO::GetCrop  (uint8_t const* data, glm::i16vec2 size, int channels,
 }
 
 
-void IO::DownloadImage(GLViewWidget * gl, IO::Image & image,  uint32_t texture)
+void IO::DownloadImage(GLViewWidget * gl, IO::Image * image,  uint32_t texture, int internalFormat)
 {
+	assert(image != nullptr);
+
 	GL_ASSERT;
 	(void)gl;
 
@@ -244,16 +246,17 @@ void IO::DownloadImage(GLViewWidget * gl, IO::Image & image,  uint32_t texture)
 	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH , &width);
 	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
-	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT , (int*)&image.internalFormat);
-	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, (int*)&image.type);
+	if(internalFormat < 0)
+		_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT , (int*)&internalFormat);
 
-	image.size = glm::ivec2(width, height);
-	image.format = Qt_to_Gl::GetFormatFromInternalFormat(image.internalFormat);
-	image.type = Qt_to_Gl::GetTypeFromInternalFormat(image.internalFormat);
+	image->size           = glm::ivec2(width, height);
+	image->internalFormat = internalFormat;
+	image->format         = Qt_to_Gl::GetFormatFromInternalFormat(internalFormat);
+	image->type           = Qt_to_Gl::GetTypeFromInternalFormat(internalFormat);
 
-	image.image.reset(new uint8_t[image.size.x * image.size.y * Qt_to_Gl::GetPixelByteWidth(image.format, image.type)]);
+	image->image.reset(new uint8_t[image->size.x * image->size.y * Qt_to_Gl::GetPixelByteWidth(image->format, image->type)]);
 
-	_gl glGetTexImage(GL_TEXTURE_2D, 0, image.internalFormat, image.type, &image.image[0]);
+	_gl glGetTexImage(GL_TEXTURE_2D, 0, image->internalFormat, image->type, &image->image[0]);
 	GL_ASSERT;
 }
 
@@ -295,14 +298,6 @@ bool IO::CheckDynamics(std::string & error, float & size_ratio, CountedSizedArra
 	return true;
 }
 
-IO::Image LoadImageOrSprite(const char * path)
-{
-	auto Sprite = SpriteFile::OpenSprite(path);
-
-	if(Sprite.empty())
-		return IO::LoadImage(path);
-
-}
 
 #if !USE_BASISU
 #include "Support/qt_to_gl.h"
@@ -312,7 +307,7 @@ IO::Image LoadImageOrSprite(const char * path)
 #include <QString>
 #include <QDir>
 
-void IO::DownloadImage(GLViewWidget * gl, QImage & image,  uint32_t texture)
+void IO::DownloadImage(GLViewWidget * gl, QImage * image,  uint32_t texture)
 {
 	GL_ASSERT;
 	(void)gl;
@@ -328,7 +323,7 @@ void IO::DownloadImage(GLViewWidget * gl, QImage & image,  uint32_t texture)
 	uint8_t * ptr = (uint8_t*) malloc(width*height*4);
 	_gl glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, ptr);
 
-	image = QImage(ptr, width, height, 4*width, QImage::Format_ARGB32, &std::free, ptr);
+	*image = QImage(ptr, width, height, 4*width, QImage::Format_ARGB32, &std::free, ptr);
 
 	GL_ASSERT;
 }

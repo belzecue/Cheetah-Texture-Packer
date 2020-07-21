@@ -424,3 +424,34 @@ uint32_t GetChannelsFromFormat(uint32_t format)
 }
 
 }
+
+bool HasAlpha(uint32_t in)
+{
+	switch(in)
+	{
+	case GL_RGB5_A1: 		return true;
+	case GL_RGBA8: 			return true;
+	case GL_RGBA8_SNORM: 	return true;
+	case GL_RGB10_A2: 		return true;
+	case GL_RGB10_A2UI: 	return true;
+	case GL_RGBA12: 		return true;
+	case GL_RGBA16:			return true;
+	case GL_SRGB8_ALPHA8:	return true;
+	case GL_RGBA16F:		return true;
+	case GL_RGBA32F:		return true;
+	case GL_RGBA8I:			return true;
+	case GL_RGBA8UI:		return true;
+	case GL_RGBA16I:		return true;
+	case GL_RGBA16UI:		return true;
+	case GL_RGBA32I:		return true;
+	case GL_RGBA32UI:		return true;
+	case GL_COMPRESSED_RGBA: 					return true;
+	case GL_COMPRESSED_SRGB_ALPHA: 				return true;
+	case GL_COMPRESSED_RGBA_BPTC_UNORM: 		return true;
+	case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM: 	return true;
+	default:
+		break;
+	}
+
+	return false;
+}

@@ -3,6 +3,8 @@
 #include "Shaders/defaultvaos.h"
 #include "Shaders/transparencyshader.h"
 #include "Shaders/unlitshader.h"
+#include "Sprite/spritesheet.h"
+#include "Import/import_c16.h"
 #include <glm/glm.hpp>
 #include <fx/gltf.h>
 #include <cctype>
@@ -76,12 +78,26 @@ void Image::LoadFromFile()
 	auto gl = m_manager->gl;
 	gl->makeCurrent();
 
-	auto image  = IO::LoadImage(m_path.c_str());
-	m_size      = image.size;
-	m_channels  = Qt_to_Gl::GetChannelsFromFormat(image.format);
-
+	IO::Image image;
 	m_ownsTexture = true;
-	IO::UploadImage(gl, &m_texture, &image.image[0], image.size, image.internalFormat, image.format, image.type);
+
+	auto Sprite = SpriteFile::OpenSprite(m_path.c_str());
+
+	{
+		image       = IO::LoadImageOrSprite(m_path.c_str());
+		m_size      = image.size;
+		m_channels  = Qt_to_Gl::GetChannelsFromFormat(image.format);
+
+		IO::UploadImage(gl, &m_texture, &image.image[0], image.size, image.internalFormat, image.format, image.type);
+	}
+
+	m_hasAlpha = Qt_to_Gl::HasAlpha(image.internalFormat);
+
+	if(image.type != GL_UNSIGNED_BYTE)
+	{
+		IO::DownloadImage(gl, &image, m_texture, m_hasAlpha? GL_RGBA8 : GL_RGB8);
+	}
+
 
 	if(m_sprites.empty())
 	{

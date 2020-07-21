@@ -49,15 +49,16 @@ typedef std::unique_ptr<uint8_t[], std_free> ImageData;
 		uint32_t     type{};
 	};
 
+	IO::Image LoadImageOrSprite(const char * path);
 	IO::Image LoadImage(const char * path);
 //	void SaveImage(const char * path, uint8_t * data, glm::i16vec2 size, int channels);
 
 	void UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm::i16vec2 size, uint32_t internal_format, uint32_t format, uint32_t type);
-	void DownloadImage(GLViewWidget *, Image &,  uint32_t);
+	void DownloadImage(GLViewWidget *, Image *,  uint32_t, int internalFormat);
 #if USE_BASISU
 	void DownloadImage(GLViewWidget *, basisu::image &,  uint32_t);
 #else
-	void DownloadImage(GLViewWidget *, QImage &,  uint32_t);
+	void DownloadImage(GLViewWidget *, QImage *,  uint32_t);
 #endif
 
 	glm::i16vec4 GetSprite(uint8_t * data, glm::i16vec2 size, int channels, glm::i16vec2 tl, uint32_t color);
