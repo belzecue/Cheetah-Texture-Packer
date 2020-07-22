@@ -15,7 +15,7 @@ SpriteFile::SpriteFile(uint32_t size, uint32_t heap_size, uint32_t internal_form
 	pointers(size),
 	heap(heap_size),
 	count(size),
-	internal_format(internal_format),
+	internalFormat(internal_format),
 	format(format),
 	type(type)
 {
@@ -24,18 +24,18 @@ SpriteFile::SpriteFile(uint32_t size, uint32_t heap_size, uint32_t internal_form
 SpriteFile SpriteFile::OpenSprite(const char * path)
 {
 	char     ext[4]{0, 0, 0, 0};
-	uint32_t len = strlen(path)-1;
+	uint32_t len = strlen(path);
 
 	if(len < 4) return {};
 
 	for(int i = 0; i < 3; ++i)
-		ext[i] = tolower(path[len-4+i]);
+		ext[i] = tolower(path[len-3+i]);
 
 	if(strncmp(ext, "spr", 3) == 0)
 		return ReadSpr(path);
 	else if(strncmp(ext, "s16", 3) == 0)
 		return ReadS16(path);
-	else
+	else if(strncmp(ext, "c16", 3) == 0)
 		return ReadC16(path);
 
 	return {};
@@ -59,7 +59,8 @@ struct Header
 	uint16_t width;
 	uint16_t height;
 
-	uint32_t end() const { return offset * width * height; }
+	uint32_t endSpr() const { return offset + width * height; }
+	uint32_t endS16() const { return offset + width * height * 2; }
 };
 
 struct C16Header
@@ -80,10 +81,10 @@ SpriteFile SpriteFile::ReadSpr(const char * path)
 
 	fp.read((char*)&no_files, 2);
 	header.resize(no_files);
-	fp.read((char*)&header[0], no_files * header.size());
+	fp.read((char*)&header[0], sizeof(header[0]) * header.size());
 
 	auto begin = fp.tellg();
-	int heap_size = (header.back().end() - begin);
+	int heap_size = (header.back().endSpr() - begin);
 
 	SpriteFile r(no_files, heap_size*4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 	fp.read((char*)&r.heap[0], heap_size);
@@ -134,10 +135,15 @@ SpriteFile SpriteFile::ReadS16(const char * path)
 	fp.read((char*)&type, 4);
 	fp.read((char*)&no_files, 2);
 	header.resize(no_files);
-	fp.read((char*)&header[0], no_files * header.size());
+	fp.read((char*)&header[0], sizeof(header[0]) * header.size());
 
 	auto begin = fp.tellg();
-	int heap_size = (header.back().end() - begin);
+	fp.seekg(0, std::ios_base::end);
+	auto end   = fp.tellg();
+	fp.seekg(begin);
+
+	int heap_size = (header.back().endS16() - begin);
+	assert(end - begin == heap_size);
 
 	SpriteFile r(no_files, heap_size*2, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 	fp.read((char*)&r.heap[0], heap_size);
@@ -178,7 +184,7 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 
 	for(uint32_t i = 0; i < no_files; ++i)
 	{
-		fp.read((char*)&header[i], sizeof(header[0]));
+		fp.read((char*)&header[i], 8);
 
 		heap_size += header[i].width * header[i].height;
 
@@ -186,7 +192,7 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 		{
 			header[i].row_offsets = CountedSizedArray<uint32_t>(header[i].height);
 			header[i].row_offsets[0] = header[i].offset;
-			fp.read((char*)&header[i].row_offsets[1], 4 * header[i].height-1);
+			fp.read((char*)&header[i].row_offsets[1], 4 * (header[i].height-1));
 		}
 	}
 
@@ -221,13 +227,19 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 		for(uint32_t y = 0; y < header[i].height; ++i)
 		{
 			uint16_t    * src = &file_data[header[i].row_offsets[i]];
-			glm::u8vec4 * dst = &image[header[i].width*y];
+			glm::u8vec4 * dst = &image[0] + header[i].width*y;
+			glm::u8vec4 * end = &image[0] + header[i].width*(y+1);
 
 			while(*src && src < endm)
 			{
 				bool transparent = !(*src & 0x0001);
 				uint16_t length  = *src >> 1;
 				++src;
+
+				if(length == 0)
+					break;
+
+				assert((dst+length) <= end);
 
 				if(transparent)
 				{
@@ -244,7 +256,6 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 						*dst = glm::u8vec4(0, 0, 0, 0);
 					else
 						*dst = glm::u8vec4(value, 255);
-
 				}
 			}
 		}

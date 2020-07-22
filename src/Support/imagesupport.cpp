@@ -242,12 +242,14 @@ void IO::DownloadImage(GLViewWidget * gl, IO::Image * image,  uint32_t texture, 
 		return;
 
 	int width{}, height{};
-	_gl glBindTexture(GL_TEXTURE_2D, texture);
-	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH , &width);
-	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+	_gl glBindTexture(GL_TEXTURE_2D, texture);	GL_ASSERT;
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH , &width);	GL_ASSERT;
+	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);	GL_ASSERT;
 
 	if(internalFormat < 0)
-		_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT , (int*)&internalFormat);
+	{
+		_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT , (int*)&internalFormat);	GL_ASSERT;
+	}
 
 	image->size           = glm::ivec2(width, height);
 	image->internalFormat = internalFormat;
@@ -256,7 +258,7 @@ void IO::DownloadImage(GLViewWidget * gl, IO::Image * image,  uint32_t texture, 
 
 	image->image.reset(new uint8_t[image->size.x * image->size.y * Qt_to_Gl::GetPixelByteWidth(image->format, image->type)]);
 
-	_gl glGetTexImage(GL_TEXTURE_2D, 0, image->internalFormat, image->type, &image->image[0]);
+	_gl glGetTexImage(GL_TEXTURE_2D, 0, image->format, image->type, &image->image[0]);
 	GL_ASSERT;
 }
 

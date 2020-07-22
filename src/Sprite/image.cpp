@@ -5,6 +5,7 @@
 #include "Shaders/unlitshader.h"
 #include "Sprite/spritesheet.h"
 #include "Import/import_c16.h"
+#include "Import/packspritesheet.h"
 #include <glm/glm.hpp>
 #include <fx/gltf.h>
 #include <cctype>
@@ -81,14 +82,28 @@ void Image::LoadFromFile()
 	IO::Image image;
 	m_ownsTexture = true;
 
-	auto Sprite = SpriteFile::OpenSprite(m_path.c_str());
-
 	{
-		image       = IO::LoadImageOrSprite(m_path.c_str());
-		m_size      = image.size;
-		m_channels  = Qt_to_Gl::GetChannelsFromFormat(image.format);
+		auto sprite = SpriteFile::OpenSprite(m_path.c_str());
 
-		IO::UploadImage(gl, &m_texture, &image.image[0], image.size, image.internalFormat, image.format, image.type);
+		if(sprite.empty())
+		{
+			image       = IO::LoadImage(m_path.c_str());
+			m_size      = image.size;
+			m_channels  = Qt_to_Gl::GetChannelsFromFormat(image.format);
+
+			IO::UploadImage(gl, &m_texture, &image.image[0], image.size, image.internalFormat, image.format, image.type);
+		}
+		else
+		{
+			PackSpriteSheet sheet(sprite.sizes);
+
+			m_size     = sheet.size;
+			m_channels = 4;
+
+			m_texture = sheet.UploadData(gl, &sprite.pointers[0], sprite.internalFormat, sprite.format, sprite.type);
+
+		}
+
 	}
 
 	m_hasAlpha = Qt_to_Gl::HasAlpha(image.internalFormat);

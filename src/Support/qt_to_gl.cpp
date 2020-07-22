@@ -423,8 +423,6 @@ uint32_t GetChannelsFromFormat(uint32_t format)
 	return 1;
 }
 
-}
-
 bool HasAlpha(uint32_t in)
 {
 	switch(in)
@@ -454,4 +452,6 @@ bool HasAlpha(uint32_t in)
 	}
 
 	return false;
+}
+
 }

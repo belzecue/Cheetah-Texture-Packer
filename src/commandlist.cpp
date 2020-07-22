@@ -1,8 +1,8 @@
 #include "commandlist.h"
 
-ObjectCommand::ObjectCommand(Document * doc, int obj, std::string insert) :
+ObjectCommand::ObjectCommand(Document * doc, int obj, counted_string insert) :
 	doc(doc),
-	new_name(counted_string::MakeUnique(insert)),
+	new_name(std::move(insert)),
 	old_offset(obj),
 	new_offset(obj)
 {

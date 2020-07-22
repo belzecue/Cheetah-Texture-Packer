@@ -431,7 +431,7 @@ QVariant SpriteModel::data(const QModelIndex &index, int role) const
 			if(ptr.empty())
 				return "";
 
-			return ptr->GetFilename();
+			return ptr->GetFilename().c_str();
 		}
 		default:
 			break;

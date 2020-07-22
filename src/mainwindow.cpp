@@ -307,6 +307,19 @@ static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMo
 		dialog.setFileMode(QFileDialog::AnyFile);
 }
 
+static void initializeSpriteFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode)
+{
+	QStringList mimeTypeFilters = { "C1 (*.spr *.Spr *.sPr *.spR *.SPr *.SpR *.sRP *.SPR)" , "C2 (*.s16 *.S16)", "C2E (*.c16 *.C16)", "All supported formats (*.spr *.Spr *.sPr *.spR *.SPr *.SpR *.sRP *.SPR *.c16 *.C16 *.s16 *.S16)" };
+
+	dialog.setNameFilters(mimeTypeFilters);
+	dialog.selectNameFilter(mimeTypeFilters.back());
+
+	if(acceptMode == QFileDialog::AcceptOpen)
+		dialog.setFileMode(QFileDialog::ExistingFile);
+	else
+		dialog.setFileMode(QFileDialog::AnyFile);
+}
+
 #endif
 std::string MainWindow::GetImage()
 {
@@ -328,7 +341,7 @@ std::string MainWindow::GetSpritePath()
 	QFileDialog dialog(this, tr("Open Sprite"));
 	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
 
-    initializeImageFileDialog(dialog, QFileDialog::AcceptOpen, { "sprite/spr", "sprite/s16", "sprite/c16"} );
+    initializeSpriteFileDialog(dialog, QFileDialog::AcceptOpen);
 
     if(dialog.exec() == QDialog::Accepted)
 	{
@@ -351,7 +364,7 @@ void MainWindow::ImportSprite()
 
 		auto image = Image::Factory(&document->imageManager, path);
 
-		auto command  = std::make_unique<ObjectCommand>(document->objects.size(), image->GetFilename());
+		auto command  = std::make_unique<ObjectCommand>(document.get(), document->objects.size(), image->GetFilename());
 		auto material = command->GetObject().get()->material.get();
 		material->unlit.is_empty = false;
 		material->SetImage(image, &material->image_slots[(int)Material::Tex::BaseColor]);

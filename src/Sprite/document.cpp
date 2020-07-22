@@ -18,7 +18,7 @@ CommandInterface * Document::addCommand(std::unique_ptr<CommandInterface> it)
 
 	window->OnDocumentChanged();
 
-	return &commandList.back();
+	return commandList.back().get();
 }
 
 void Document::editUndo()

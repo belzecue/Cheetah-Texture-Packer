@@ -55,7 +55,7 @@ public:
 	CountedSizedArray<glm::u16vec4> m_normalized;
 	CountedSizedArray<glm::u16vec4> m_normalizedPositions;
 
-	const char * GetFilename() const { return m_filename.c_str(); }
+	counted_string const& GetFilename() const { return m_filename; }
 
 	bool isLoaded() const { return m_isLoaded; }
 	bool hasAlpha() const { return m_hasAlpha; }

@@ -16,7 +16,7 @@ public:
 		pointers(file.pointers),
 		heap(file.heap),
 		count(file.count),
-		internal_format(file.internal_format),
+		internalFormat(file.internalFormat),
 		format(file.format),
 		type(file.type)
 	{
@@ -30,12 +30,12 @@ public:
 	CountedSizedArray<uint8_t>      heap;
 
 	uint16_t                        count{};
-	uint32_t                        internal_format{};
+	uint32_t                        internalFormat{};
 	uint32_t                        format{};
 	uint32_t                        type{};
 
 private:
-	SpriteFile(uint32_t size, uint32_t heap_size, uint32_t internal_format, uint32_t format, uint32_t type);
+	SpriteFile(uint32_t size, uint32_t heap_size, uint32_t internalFormat, uint32_t format, uint32_t type);
 
 	static SpriteFile ReadSpr(const char * path);
 	static SpriteFile ReadC16(const char * path);

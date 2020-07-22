@@ -34,6 +34,7 @@ SOURCES += src/main.cpp\
 	../../../Libraries/fx-gltf/src/fx/gltf.cpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.cpp \
 	src/Import/import_c16.cpp \
+	src/Import/packspritesheet.cpp \
 	src/Import/super_xbr.cpp \
 	src/Import/upscalesprite.cpp \
 	src/Shaders/colorshader.cpp \
@@ -54,7 +55,6 @@ SOURCES += src/main.cpp\
 	src/Support/counted_string.cpp \
 	src/Support/imagesupport.cpp \
 	src/Support/qt_to_gl.cpp \
-	src/Texture-Packer/packspritesheet.cpp \
 	src/commandlist.cpp \
 	src/imagemetadata.cpp \
 	src/lf_math.cpp \
@@ -82,6 +82,7 @@ HEADERS  += src/mainwindow.h \
 	../../../Libraries/fx-gltf/src/fx/gltf_forward.hpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.h \
 	src/Import/import_c16.h \
+	src/Import/packspritesheet.h \
 	src/Import/super_xbr.h \
 	src/Import/upscalesprite.h \
 	src/Shaders/colorshader.h \
@@ -106,7 +107,6 @@ HEADERS  += src/mainwindow.h \
 	src/Support/imagesupport.h \
 	src/Support/qt_to_gl.h \
 	src/Support/vectoroperations.hpp \
-	src/Texture-Packer/packspritesheet.h \
 	src/commandinterface.hpp \
 	src/commandlist.h \
 	src/enums.hpp \

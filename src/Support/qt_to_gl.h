@@ -17,7 +17,7 @@ uint32_t GetTypeFromInternalFormat(uint32_t);
 uint32_t GetPixelByteWidth(uint32_t format, uint32_t type);
 
 uint32_t GetChannelsFromFormat(uint32_t format);
-uint32_t HasAlpha(uint32_t format);
+bool     HasAlpha(uint32_t format);
 
 }
 

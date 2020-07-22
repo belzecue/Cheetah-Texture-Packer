@@ -34,7 +34,7 @@ struct Document
 	void Release() { if(--m_refCount == 0) delete this; }
 
 	template<typename T, typename...Args>
-	T * addCommand(Args&&... args)
+	CommandInterface * addCommand(Args&&... args)
 	{
 		std::unique_ptr<T> r;
 		try

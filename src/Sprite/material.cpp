@@ -84,28 +84,35 @@ void Material::SetImage(counted_ptr<Image> image, counted_ptr<Image> * slot)
 
 std::string Material::IsImageCompatible(Material::Tex tex, counted_ptr<Image> image)
 {
-	UNUSED(tex);
-
-	if(image == nullptr)
-		return {};
-
-	image->LoadFromFile();
-
-//first one so anything goes
-	if(current_slot == Tex::None)
-		return {};
-
-	if(m_sprites.size() != image->m_sprites.size())
-		return "number of sprites in image does not match number in material.";
-
-//check compatibility...
-	if(image->m_normalizedPositions.merge(m_normalizedSprites))
+	try
 	{
-		image->m_sprites.merge(m_sprites);
-		return {};
-	}
+		UNUSED(tex);
 
-	return "sprites in image do not properly align with sprites in material.";
+		if(image == nullptr)
+			return {};
+
+		image->LoadFromFile();
+
+	//first one so anything goes
+		if(current_slot == Tex::None)
+			return {};
+
+		if(m_sprites.size() != image->m_sprites.size())
+			return "number of sprites in image does not match number in material.";
+
+	//check compatibility...
+		if(image->m_normalizedPositions.merge(m_normalizedSprites))
+		{
+			image->m_sprites.merge(m_sprites);
+			return {};
+		}
+
+		return "sprites in image do not properly align with sprites in material.";
+	}
+	catch(std::exception & e)
+	{
+		return e.what();
+	}
 }
 
 void Material::CreateDefaultArrays(GLViewWidget* gl)
