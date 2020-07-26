@@ -2,6 +2,7 @@
 #include <widgets/glviewwidget.h>
 #include <climits>
 #include <memory>
+#include <iostream>
 
 
 bool IsCompressed(uint32_t u)
@@ -47,6 +48,8 @@ PackSpriteSheet::PackSpriteSheet(CountedSizedArray<glm::u16vec2> _sizes) :
 
 
 	positions = CountedSizedArray<glm::u16vec2>(sizes.size());
+	size      = best.size;
+
 	glm::u16vec2 row  {4, 4};
 
 	for(uint32_t i = 0, j = 0; i < sizes.size(); ++i)
@@ -107,7 +110,9 @@ PackSpriteSheet::SheetMemo PackSpriteSheet::CreateMemo(glm::u16vec2 const* sprit
 			row_start.push_back(row.y);
 
 			sheet.x = std::max<int>(sheet.x, row.x+4);
-			row = glm::u16vec2(0, 0);
+			sheet.y += row.y;
+
+			row = glm::u16vec2(4, 4);
 		}
 
 		row.y  = std::max<int>(rounded.y+4, row.y);
@@ -115,6 +120,19 @@ PackSpriteSheet::SheetMemo PackSpriteSheet::CreateMemo(glm::u16vec2 const* sprit
 	}
 
 	return { glm::u16vec2(sheet.x, sheet.y), std::move(row_start) };
+}
+
+CountedSizedArray<glm::i16vec4> PackSpriteSheet::BuildSprites()
+{
+	CountedSizedArray<glm::i16vec4> r(positions.size());
+
+	for(uint32_t i = 0; i < positions.size(); ++i)
+		r[i] = glm::u16vec4(positions[i], 0, 0);
+
+	for(uint32_t i = 0; i < sizes.size(); ++i)
+		r[i] = glm::u16vec4(r[i].x, r[i].y, r[i].x + sizes[i].x, r[i].y + sizes[i].y);
+
+	return r;
 }
 
 uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t internal_format, uint32_t format, uint32_t type, float compression_ratio)
@@ -127,14 +145,16 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 
 		_gl glBindTexture(GL_TEXTURE_2D, r);
 
-		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
 		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP );
 		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
+		_gl glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 		_gl glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
+		GL_ASSERT;
 
 		{
 			uint32_t N = size.x*size.y;
@@ -154,19 +174,26 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 				&background_color[0][0]);
 		}
 
+		GL_ASSERT;
+
 		bool is_compressed = IsCompressed(format);
 
 		for(uint32_t i = 0; i < positions.size(); ++i)
 		{
 			glm::u16vec4 coords = glm::u16vec4(positions[i], sizes[i].x, sizes[i].y);
 
+			std::cerr << "AABB[" << i << "] = {" << coords.x << ", " << coords.y << ", " << coords.z  << ", " << coords.w  << "}" << std::endl;
+
+			assert( coords.x + coords.z < size.x && coords.y + coords.w < size.y);
+			assert(size.x > 0 && size.y > 0);
+
 			if(!is_compressed)
 				_gl glTexSubImage2D(GL_TEXTURE_2D,
 					0,
 					coords.x,
 					coords.y,
-					size.x,
-					size.y,
+					coords.z,
+					coords.w,
 					format,
 					type,
 					sprites[i]);
@@ -180,6 +207,8 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 					format,
 					coords.z * coords.w * compression_ratio,
 					sprites[i]);
+
+			GL_ASSERT;
 		}
 	}
 	catch(...)
@@ -189,6 +218,8 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 		r = 0;
 		throw;
 	}
+
+	GL_ASSERT;
 
 	return r;
 }

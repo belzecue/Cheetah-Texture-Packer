@@ -101,7 +101,7 @@ void Image::LoadFromFile()
 			m_channels = 4;
 
 			m_texture = sheet.UploadData(gl, &sprite.pointers[0], sprite.internalFormat, sprite.format, sprite.type);
-
+			m_sprites = sheet.BuildSprites();
 		}
 
 	}
@@ -115,17 +115,18 @@ void Image::LoadFromFile()
 
 
 	if(m_sprites.empty())
-	{
 		m_sprites    = IO::GetSprites(&image.image[0], image.size, m_channels);
+
+	if(m_cropped.empty())
+	{
 		m_cropped    = IO::GetCrop(&image.image[0], image.size, m_channels, m_sprites);
-	//	m_cropped    = m_sprites;
 		m_normalized = IO::NormalizeCrop(m_cropped, image.size);
+	}
 
-		if(m_cropped.merge(m_sprites))
-			m_normalizedPositions = m_normalized;
-		else
-			m_normalizedPositions = IO::NormalizeCrop(m_sprites, image.size);
-
+	if(m_cropped.merge(m_sprites))
+		m_normalizedPositions = m_normalized;
+	else
+		m_normalizedPositions = IO::NormalizeCrop(m_sprites, image.size);
 
 #if HAVE_CHROMA_KEY
 		CropHistory hist;
@@ -136,7 +137,6 @@ void Image::LoadFromFile()
 
 		m_cropHistory.push_back(hist);
 #endif
-	}
 
 	gl->doneCurrent();
 }
