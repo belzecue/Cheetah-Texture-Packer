@@ -109,18 +109,18 @@ SpriteFile SpriteFile::ReadSpr(const char * path)
 static glm::u8vec3 From565(uint16_t r)
 {
 	return {
-		(r & 0xF800) >> 8,
-		(r & 0x07E)  >> 3,
-		(r & 0x001F) << 3
+        (r & 0xF800u) >> 8u,
+        (r & 0x07E0u) >> 3u,
+        (r & 0x001Fu) << 3u
 	};
 }
 
 static glm::u8vec3 From555(uint16_t r)
 {
 	return {
-		(r & 0x7C00) >> 7,
-		(r & 0x03E)  >> 2,
-		(r & 0x001F) << 3
+        (r & 0x7C00u) >> 7u,
+        (r & 0x03E0u)  >> 2u,
+        (r & 0x001Fu) << 3u
 	};
 }
 
@@ -149,19 +149,25 @@ SpriteFile SpriteFile::ReadS16(const char * path)
 	fp.read((char*)&r.heap[0], heap_size);
 
 	for(uint16_t i = 0; i < no_files; ++i)	r.sizes   [i] = glm::u16vec2(header[i].width, header[i].height);
-	for(uint16_t i = 0; i < no_files; ++i)	r.pointers[i] = &r.heap[(header[i].offset - begin)*4];
+    for(uint16_t i = 0; i < no_files; ++i)	r.pointers[i] = &r.heap[(header[i].offset - begin)*2];
 
 	auto FromUint16 = type? &From565 : &From555;
 
-	for(--heap_size; heap_size >= 0; heap_size -= 2)
+    uint16_t * r_end   = (uint16_t*)&r.heap[0];
+    uint16_t * r_begin = ((uint16_t*)&r.heap[heap_size])-1;
+
+    glm::u8vec4 * pixels = ((glm::u8vec4*)&r.heap[heap_size*2])-1;
+
+    for(; r_begin >= r_end; --r_begin, --pixels)
 	{
-		glm::u8vec3  src  = FromUint16(*(uint16_t*)&r.heap[heap_size]);
-		glm::u8vec4 & dst = *(glm::u8vec4*)&r.heap[heap_size*2];
+        assert((void*)pixels >= (void*)r_begin);
+
+        glm::u8vec3  src  = FromUint16(*r_begin);
 
 		if(src.x == 0 && src.y == 0 && src.z == 0)
-			dst = glm::u8vec4(0, 0, 0, 0);
+            *pixels = glm::u8vec4(0, 0, 0, 0);
 		else
-			dst = glm::u8vec4(src, 255);
+            *pixels = glm::u8vec4(src, 255);
 	}
 
 	return r;

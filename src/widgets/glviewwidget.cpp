@@ -21,6 +21,7 @@
 #include <iostream>
 #include <cassert>
 #include <QOpenGLDebugLogger>
+#include <QSurfaceFormat>
 
 #include <GL/glu.h>
 
@@ -39,6 +40,8 @@ GLViewWidget::GLViewWidget(QWidget * p) :
 {
 	TransparencyShader::Shader.AddRef();
 	VelvetShader::Shader.AddRef();
+
+    setFormat(QSurfaceFormat(QSurfaceFormat::DebugContext));
 
 	timer.setSingleShot(false);
 	timer.setInterval(10);
@@ -135,8 +138,8 @@ void GLViewWidget::initializeGL()
 
 	connect(logger, &QOpenGLDebugLogger::messageLogged, this, &GLViewWidget::handleLoggedMessage);
 
-	glAssert();
- //   logger->startLogging(); glAssert();
+    glAssert();
+    logger->startLogging(); glAssert();
 }
 
 typedef std::pair<int, const char*> Flag;

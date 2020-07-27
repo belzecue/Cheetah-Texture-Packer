@@ -23,7 +23,7 @@ struct PackSpriteSheet
 private:
 	struct SheetMemo
 	{
-		uint32_t perimeter() { return size.x*2 + size.y*2; }
+		uint32_t perimeter() { return (size.x + size.y)*2; }
 
 		glm::u16vec2 size;
 		std::vector<int> row_heights;

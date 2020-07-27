@@ -323,8 +323,7 @@ static void initializeSpriteFileDialog(QFileDialog &dialog, QFileDialog::AcceptM
 #endif
 std::string MainWindow::GetImage()
 {
-	QFileDialog dialog(this, tr("Open File"));
-	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+    QFileDialog dialog(this, tr("Open File"));
 
     initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
 
@@ -338,8 +337,7 @@ std::string MainWindow::GetImage()
 
 std::string MainWindow::GetSpritePath()
 {
-	QFileDialog dialog(this, tr("Open Sprite"));
-	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+    QFileDialog dialog(this, tr("Open Sprite"));
 
     initializeSpriteFileDialog(dialog, QFileDialog::AcceptOpen);
 

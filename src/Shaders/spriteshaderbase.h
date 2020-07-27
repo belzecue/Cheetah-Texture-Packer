@@ -3,7 +3,7 @@
 #include "glprogram.h"
 #include <glm/mat4x4.hpp>
 
-class Material;
+struct Material;
 class GLViewWidget;
 class Tex;
 

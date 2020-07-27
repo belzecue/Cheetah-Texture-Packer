@@ -2,6 +2,8 @@
 #include <widgets/glviewwidget.h>
 #include <climits>
 #include <memory>
+#include <thread>
+#include <chrono>
 #include <iostream>
 
 
@@ -57,7 +59,10 @@ PackSpriteSheet::PackSpriteSheet(CountedSizedArray<glm::u16vec2> _sizes) :
 		glm::u16vec2 rounded = (sizes[i] + glm::u16vec2(7, 7)) & glm::u16vec2(0xFFFC, 0xFFFC);
 
 		if(row.x + rounded.x > best.size.x)
-			row = glm::u16vec2(4, best.row_heights[++j]);
+		{
+			row.x = 4;
+			row.y += best.row_heights[j++];
+		}
 
 		positions[i] = row;
 		row.x += rounded.x;
@@ -88,18 +93,19 @@ PackSpriteSheet::SheetMemo PackSpriteSheet::CreateMemo(glm::u16vec2 const* sprit
 	{
 		glm::u16vec2 rounded = (sprites[i] + glm::u16vec2(7, 7)) & glm::u16vec2(0xFFFC, 0xFFFC);
 
-		row.y = std::max<int>(rounded.y+4, row.y);
+		row.y = std::max<int>(rounded.y, row.y);
 		row.x += rounded.x;
 	}
 
-	std::vector<int> row_start(1, 0);
+	std::vector<int> row_start;
 	row_start.push_back(row.y);
 
 	sheet = row;
-	row = glm::u16vec2(4, 4);
 
 	if(first_cut < no_sprites) row.x += sprites[first_cut].x;
 	max_width = row.x;
+
+	row = glm::u16vec2(4, 4);
 
 	for(uint32_t i = first_cut; i < no_sprites; ++i)
 	{
@@ -115,11 +121,14 @@ PackSpriteSheet::SheetMemo PackSpriteSheet::CreateMemo(glm::u16vec2 const* sprit
 			row = glm::u16vec2(4, 4);
 		}
 
-		row.y  = std::max<int>(rounded.y+4, row.y);
-		row.x += rounded.x+4;
+		row.y  = std::max<int>(rounded.y, row.y);
+		row.x += rounded.x;
 	}
 
-	return { glm::u16vec2(sheet.x, sheet.y), std::move(row_start) };
+	sheet.x = std::max<int>(sheet.x, row.x+4);
+	sheet.y += row.y;
+
+	return { glm::u16vec2(sheet.x, sheet.y+4), std::move(row_start) };
 }
 
 CountedSizedArray<glm::i16vec4> PackSpriteSheet::BuildSprites()
@@ -137,6 +146,7 @@ CountedSizedArray<glm::i16vec4> PackSpriteSheet::BuildSprites()
 
 uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t internal_format, uint32_t format, uint32_t type, float compression_ratio)
 {
+	using namespace std::chrono_literals;
 	uint32_t r;
 
 	try
@@ -156,23 +166,21 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 
 		GL_ASSERT;
 
-		{
-			uint32_t N = size.x*size.y;
-			std::unique_ptr<glm::u8vec4[]> background_color(new glm::u8vec4[N]);
+		uint32_t N = size.x*size.y;
+		std::unique_ptr<glm::u8vec4[]> background_color(new glm::u8vec4[N]);
 
-			for(uint32_t i = 0; i < N; ++i)
-				background_color[i] = border_color;
+		for(uint32_t i = 0; i < N; ++i)
+			background_color[i] = border_color;
 
-			_gl glTexImage2D(GL_TEXTURE_2D,
-				0,
-				internal_format,
-				size.x,
-				size.y,
-				0,
-				GL_RGBA,
-				GL_UNSIGNED_BYTE,
-				&background_color[0][0]);
-		}
+		_gl glTexImage2D(GL_TEXTURE_2D,
+			0,
+			internal_format,
+			size.x,
+			size.y,
+			0,
+			GL_RGBA,
+			GL_UNSIGNED_BYTE,
+			&background_color[0][0]);
 
 		GL_ASSERT;
 
@@ -202,8 +210,8 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 					0,
 					coords.x,
 					coords.y,
-					size.x,
-					size.y,
+					coords.z,
+					coords.w,
 					format,
 					coords.z * coords.w * compression_ratio,
 					sprites[i]);

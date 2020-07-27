@@ -17,6 +17,7 @@
 #include "stdlib.h"
 #include "parsearguments.h"
 #include <cassert>
+#include <direct.h>
 
 #include <QImageWriter>
 
@@ -96,6 +97,13 @@ int main(int argc, char *argv[])
     myTranslator.load("cheetah_" + QLocale::system().name(), "qm");
     a.installTranslator(&myTranslator);
     MainWindow w;
+
+#ifdef _WIN32
+    _chdir("F:/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+#else
+    chdir("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+#endif
+
     w.show();
 
 

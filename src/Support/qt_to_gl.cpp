@@ -1,4 +1,5 @@
 #include "qt_to_gl.h"
+#include <stdexcept>
 #include <QOpenGLFunctions_3_3_Core>
 #include <QImage>
 
@@ -36,8 +37,11 @@ uint32_t GetFormat(QImage::Format in)
 	case QImage::Format_RGBX64:					return GL_RGBA;
 	case QImage::Format_RGBA64:					return GL_RGBA;
 	case QImage::Format_RGBA64_Premultiplied:	return GL_RGBA;
+
+#if QT_VERSION  >= QT_VERSION_CHECK(5, 14, 0)
 	case QImage::Format_Grayscale16:			return GL_RED;
 	case QImage::Format_BGR888:					return GL_BGR;
+#endif
 	default:
 		throw std::logic_error("Unknown QImage::Format");
 	}
@@ -76,9 +80,11 @@ uint32_t GetType(QImage::Format in)
 	case QImage::Format_Grayscale8:				return GL_UNSIGNED_BYTE;
 	case QImage::Format_RGBX64:					return GL_UNSIGNED_SHORT;
 	case QImage::Format_RGBA64:					return GL_UNSIGNED_SHORT;
-	case QImage::Format_RGBA64_Premultiplied:	return GL_UNSIGNED_SHORT;
+    case QImage::Format_RGBA64_Premultiplied:	return GL_UNSIGNED_SHORT;
+#if QT_VERSION  >= QT_VERSION_CHECK(5, 14, 0)
 	case QImage::Format_Grayscale16:			return GL_UNSIGNED_SHORT;
 	case QImage::Format_BGR888:					return GL_UNSIGNED_BYTE;
+#endif
 	default:
 		throw std::logic_error("Unknown QImage::Format");
 	}
@@ -115,12 +121,15 @@ uint32_t GetInternalFormat(QImage::Format in)
 	case QImage::Format_RGB30:					return GL_RGB10;
 	case QImage::Format_A2RGB30_Premultiplied:	return GL_RGB10_A2;
 	case QImage::Format_Alpha8:					return GL_R8;
-	case QImage::Format_Grayscale8:				return GL_R8;
+    case QImage::Format_Grayscale8:				return GL_R8;
 	case QImage::Format_RGBX64:					return GL_RGB16;
 	case QImage::Format_RGBA64:					return GL_RGBA16;
-	case QImage::Format_RGBA64_Premultiplied:	return GL_RGBA16;
-	case QImage::Format_Grayscale16:			return GL_R16;
+    case QImage::Format_RGBA64_Premultiplied:	return GL_RGBA16;
+
+#if QT_VERSION  >= QT_VERSION_CHECK(5, 14, 0)
+    case QImage::Format_Grayscale16:			return GL_R16;
 	case QImage::Format_BGR888:					return GL_RGB8;
+#endif
 	default:
 		throw std::logic_error("Unknown QImage::Format");
 	}
@@ -177,8 +186,10 @@ QImage::Format GetTargetFormat(QImage const& in)
 	case QImage::Format_RGBX64:					return QImage::Format_RGBX64;
 	case QImage::Format_RGBA64:					return QImage::Format_RGBA64;
 	case QImage::Format_RGBA64_Premultiplied:	return QImage::Format_RGBA64_Premultiplied;
+#if QT_VERSION  >= QT_VERSION_CHECK(5, 14, 0)
 	case QImage::Format_Grayscale16:			return QImage::Format_Grayscale16;
 	case QImage::Format_BGR888:					return QImage::Format_BGR888;
+#endif
 	default:
 		throw std::logic_error("Unknown QImage::Format");
 	}

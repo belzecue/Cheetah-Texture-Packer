@@ -17,7 +17,7 @@ struct ModelToken
 	uint8_t      depth;
 	uint8_t      children;
 	TokType      type;
-	long         offsetof;
+    long         offsetof;
 	const char * name;
 };
 
@@ -28,7 +28,7 @@ T & Get(Material &mat, ModelToken const& detail)
 }
 
 
-#define Token3(depth, row, children, name, tok_type, offset, string)  { MaterialProperty:: name, MaterialProperty::None, row, depth, children, TokType:: tok_type, (uint8_t*)&singleton.offset - (uint8_t*)&singleton, string  }
+#define Token3(depth, row, children, name, tok_type, offset, string)  { MaterialProperty:: name, MaterialProperty::None, row, depth, children, TokType:: tok_type, (long) ((uint8_t*)&singleton.offset - (uint8_t*)&singleton), string  }
 #define Token2(depth, row, children, name, first_child)               { MaterialProperty:: name, MaterialProperty:: first_child, row, depth, children, TokType::None, 0L, #name  }
 #define Token_(depth, row, children, name, tok_type, offset)          Token3(depth, row, children, name, tok_type, offset, #name)
 
@@ -200,9 +200,11 @@ QModelIndex SpriteModel::parent(const QModelIndex &child) const
 	case Heirarchy::Root:
 		return QModelIndex();
 	case Heirarchy::ObjectList:
-		entity.object    = 0;
-		entity.heirarchy = Heirarchy::Root;
-		return createIndex(0, 0, entity.data());
+        return QModelIndex();
+
+//		entity.object    = 0;
+//		entity.heirarchy = Heirarchy::Root;
+//		return createIndex(0, 0, entity.data());
 
 	case Heirarchy::ObjectContents:
 		entity.heirarchy = Heirarchy::ObjectList;

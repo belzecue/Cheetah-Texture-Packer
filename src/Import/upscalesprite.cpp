@@ -2,6 +2,7 @@
 #include "import_c16.h"
 #include "super_xbr.h"
 #include "widgets/glviewwidget.h"
+#include <stdexcept>
 #include <vector>
 
 static

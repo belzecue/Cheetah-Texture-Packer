@@ -24,10 +24,6 @@ class QImage;
 
 namespace IO
 {
-struct std_free { void operator()(void * it) { std::free(it); } };
-
-typedef std::unique_ptr<uint8_t[], std_free> ImageData;
-
 	enum class Format : int8_t
 	{
 		Unknown = -1,
@@ -42,11 +38,11 @@ typedef std::unique_ptr<uint8_t[], std_free> ImageData;
 
 	struct Image
 	{
-		ImageData    image{nullptr};
-		glm::i16vec2 size{0, 0};
-		uint32_t     format{};
-		uint32_t     internalFormat{};
-		uint32_t     type{};
+		std::unique_ptr<uint8_t[]> image{nullptr};
+		glm::i16vec2               size{0, 0};
+		uint32_t                   format{};
+		uint32_t                   internalFormat{};
+		uint32_t                   type{};
 	};
 
 	IO::Image LoadImage(const char * path);
