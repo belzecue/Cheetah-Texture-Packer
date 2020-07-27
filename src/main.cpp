@@ -17,7 +17,11 @@
 #include "stdlib.h"
 #include "parsearguments.h"
 #include <cassert>
+#ifdef _WIN32
 #include <direct.h>
+#else
+#include <unistd.h>
+#endif
 
 #include <QImageWriter>
 
@@ -81,7 +85,7 @@ int main(int argc, char *argv[])
 
         qint64 area = CalculateTotalArea(textures);
 
-        float percent = (((float)packer.area / (float)area) * 100.0f);
+        float percent = (((float)packerr .area / (float)area) * 100.0f);
         //        float percent2 = (float)(((float)packer.neededArea / (float)area) * 100.0f );
         printf("Atlas generated. %f%% filled, %d images missed, %d merged, %d KB\n",
                percent, packer.missingImages, packer.mergedImages, (int)((area * 4) / 1024));

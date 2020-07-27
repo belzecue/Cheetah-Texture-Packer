@@ -26,7 +26,6 @@ class PackerSettings;
 
 class SettingsPanel : public QObject
 {
-	Q_OBJECT
 public:
 	SettingsPanel(MainWindow &parent);
 	virtual ~SettingsPanel();

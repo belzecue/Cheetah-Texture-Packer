@@ -239,7 +239,7 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 			while(*src && src < endm)
 			{
 				bool transparent = !(*src & 0x0001);
-				uint16_t length  = *src >> 1;
+				int16_t length  = *src >> 1;
 				++src;
 
 				if(length == 0)
