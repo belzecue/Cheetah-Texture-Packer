@@ -210,6 +210,15 @@ uint32_t GetFormatFromInternalFormat(uint32_t in)
 {
 	switch(in)
 	{
+	case GL_RED: 			return GL_RED;
+	case GL_RG: 			return GL_RG;
+	case GL_RGB:			return GL_RGB;
+	case GL_RGBA:			return GL_RGBA;
+	case GL_RED_INTEGER: 	return GL_RED_INTEGER;
+	case GL_RG_INTEGER:		return GL_RG_INTEGER;
+	case GL_RGB_INTEGER:	return GL_RGB_INTEGER;
+	case GL_RGBA_INTEGER: 	return GL_RGBA_INTEGER;
+
 	case GL_R8: 			return GL_RED;
 	case GL_R8_SNORM: 		return GL_RED;
 	case GL_R16: 			return GL_RED;

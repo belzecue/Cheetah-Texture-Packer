@@ -173,9 +173,22 @@ SpriteFile SpriteFile::ReadS16(const char * path)
 	return r;
 }
 
+
+
+
 SpriteFile SpriteFile::ReadC16(const char * path)
 {
 	auto fp = OpenBinary(path);
+
+//we use offsets to read the file so just copy the whole fucker into a buffer.
+	fp.seekg(0, std::ios_base::end);
+	uint32_t file_size = fp.tellg();
+	std::unique_ptr<uint16_t[]> file_data(new uint16_t[file_size]);
+	fp.seekg(0, std::ios_base::beg);
+	fp.read((char*)&file_data[0], file_size);
+
+//back to the start read the header
+	fp.seekg(0, std::ios_base::beg);
 
 	uint32_t type{};
 	uint16_t no_files{};
@@ -185,14 +198,20 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 	fp.read((char*)&no_files, 2);
 	header.resize(no_files);
 
+	if((type & 0x02) == 0)
+		throw std::runtime_error("Improper C16 header, S16 file?");
+
+	if((type & ~0x03u) != 0)
+		throw std::runtime_error("Improper C16 header");
+
 //read headers
-	uint32_t heap_size = 0;
+	uint32_t no_pixels = 0;
 
 	for(uint32_t i = 0; i < no_files; ++i)
 	{
 		fp.read((char*)&header[i], 8);
 
-		heap_size += header[i].width * header[i].height;
+		no_pixels += header[i].width * header[i].height;
 
 		if(header[i].height > 1)
 		{
@@ -200,31 +219,30 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 			header[i].row_offsets[0] = header[i].offset;
 			fp.read((char*)&header[i].row_offsets[1], 4 * (header[i].height-1));
 		}
+
+		for(auto i : header[i].row_offsets)
+		{
+			if(i > file_size)
+				throw std::runtime_error("C16 line offset outside of file...");
+		}
 	}
 
-//load everything into a buffer
-	fp.seekg(0, std::ios_base::end);
-	uint32_t file_size = fp.tellg();
-	std::unique_ptr<uint16_t[]> file_data(new uint16_t[fp.tellg()]);
-	fp.seekg(0, std::ios_base::beg);
-	fp.read((char*)&file_data[0], file_size);
-
 //allocate sprite
-	SpriteFile r(no_files, heap_size*4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
+	SpriteFile r(no_files, no_pixels*4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE);
 
 //copy sizes
 	for(uint16_t i = 0; i < no_files; ++i)	r.sizes   [i] = glm::u16vec2(header[i].width, header[i].height);
 
 //set offsets
-	heap_size = 0;
+	no_pixels = 0;
 	for(uint16_t i = 0; i < no_files; ++i)
 	{
-		r.pointers[i] = &r.heap[heap_size];
-		heap_size += (header[i].width * header[i].height) * 4;
+		r.pointers[i] = &r.heap[no_pixels];
+		no_pixels += (header[i].width * header[i].height) * 4;
 	}
 
-	auto FromUint16 = type? &From565 : &From555;
-	auto endm       = &file_data[file_size-1];
+	const auto FromUint16 = (type & 0x01)? &From565 : &From555;
+	const void * endm     = &file_data[0] + file_size;
 
 	for(uint16_t i = 0; i < no_files; ++i)
 	{
@@ -232,9 +250,11 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 
 		for(uint32_t y = 0; y < header[i].height; ++i)
 		{
-			uint16_t    * src = &file_data[header[i].row_offsets[i]];
+			uint16_t    * src = &file_data[header[i].row_offsets[y]];
 			glm::u8vec4 * dst = &image[0] + header[i].width*y;
-			glm::u8vec4 * end = &image[0] + header[i].width*(y+1);
+			const void  * end = &image[0] + header[i].width*(y+1);
+
+			assert(&file_data[0] < src && src < endm);
 
 			while(*src && src < endm)
 			{
@@ -245,27 +265,35 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 				if(length == 0)
 					break;
 
-				assert((dst+length) <= end);
+				if((dst+length) > end) break;
 
 				if(transparent)
 				{
-					memset(&dst, 0, 4 * length);
+					memset(dst, 0, 4 * length);
 					dst += length;
 					continue;
 				}
+				else
+				{
+					memset(dst, 0xFF, 4 * length);
+					dst += length;
+					src += length;
+					continue;
+				}
 
-				for(; length >= 0; ++dst, ++src, --length)
+				for(; length > 0; ++dst, ++src, --length)
 				{
 					glm::u8vec3 value = FromUint16(*src);
 
 					if(value.x == 0 && value.y == 0 && value.z == 0)
-						*dst = glm::u8vec4(0, 0, 0, 0);
+						*dst = glm::u8vec4(0, 0, 0, 255);
 					else
 						*dst = glm::u8vec4(value, 255);
 				}
-			}
-		}
-	}
+
+			} // end while
+		} // end for height
+	} // end for file
 
 	return r;
 }

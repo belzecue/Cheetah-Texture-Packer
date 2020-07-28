@@ -103,23 +103,21 @@ void Image::LoadFromFile()
 			m_texture = sheet.UploadData(gl, &sprite.pointers[0], sprite.internalFormat, sprite.format, sprite.type);
 			m_sprites = sheet.BuildSprites();
 		}
+	}
 
+	if(image.type != GL_UNSIGNED_BYTE)
+	{
+		IO::DownloadImage(gl, &image, m_texture, -1, -1, GL_UNSIGNED_BYTE);
 	}
 
 	m_hasAlpha = Qt_to_Gl::HasAlpha(image.internalFormat);
 
-	if(image.type != GL_UNSIGNED_BYTE)
-	{
-		IO::DownloadImage(gl, &image, m_texture, m_hasAlpha? GL_RGBA8 : GL_RGB8);
-	}
-
-
 	if(m_sprites.empty())
-		m_sprites    = IO::GetSprites(&image.image[0], image.size, m_channels);
+		m_sprites    = IO::GetSprites(&image.image[0], image.bytes, image.size, m_channels);
 
 	if(m_cropped.empty())
 	{
-		m_cropped    = IO::GetCrop(&image.image[0], image.size, m_channels, m_sprites);
+		m_cropped    = IO::GetCrop(&image.image[0], image.bytes, image.size, m_channels, m_sprites);
 		m_normalized = IO::NormalizeCrop(m_cropped, image.size);
 	}
 

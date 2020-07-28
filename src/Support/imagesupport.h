@@ -43,13 +43,14 @@ namespace IO
 		uint32_t                   format{};
 		uint32_t                   internalFormat{};
 		uint32_t                   type{};
+		uint32_t                   bytes{};
 	};
 
 	IO::Image LoadImage(const char * path);
 //	void SaveImage(const char * path, uint8_t * data, glm::i16vec2 size, int channels);
 
 	void UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm::i16vec2 size, uint32_t internal_format, uint32_t format, uint32_t type);
-	void DownloadImage(GLViewWidget *, Image *,  uint32_t, int internalFormat);
+	void DownloadImage(GLViewWidget *, Image *,  uint32_t, int internalFormat, int format, int type);
 #if USE_BASISU
 	void DownloadImage(GLViewWidget *, basisu::image &,  uint32_t);
 #else
@@ -59,8 +60,8 @@ namespace IO
 	glm::i16vec4 GetSprite(uint8_t * data, glm::i16vec2 size, int channels, glm::i16vec2 tl, uint32_t color);
 	glm::i16vec4 GetCrop  (const uint8_t * data, glm::i16vec2 size, int channels, glm::i16vec4 aabb, uint32_t greenMask, uint32_t greenScreen);
 
-	CountedSizedArray<glm::i16vec4> GetSprites(uint8_t * data, glm::i16vec2 size, int channels);
-	CountedSizedArray<glm::i16vec4> GetCrop(uint8_t * data, glm::i16vec2 size, int channels, CountedSizedArray<glm::i16vec4> sprites);
+	CountedSizedArray<glm::i16vec4> GetSprites(uint8_t * data, uint32_t, glm::i16vec2 size, int channels);
+	CountedSizedArray<glm::i16vec4> GetCrop(uint8_t * data, uint32_t data_bytes, glm::i16vec2 size, int channels, CountedSizedArray<glm::i16vec4> sprites);
 	CountedSizedArray<glm::u16vec4> NormalizeCrop(CountedSizedArray<glm::i16vec4> sprites, glm::i16vec2 size);
 
 	bool CheckDynamics(std::string & error, float & size_ratio, CountedSizedArray<glm::i16vec4> A, CountedSizedArray<glm::i16vec4> B);

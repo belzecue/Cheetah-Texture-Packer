@@ -17,6 +17,8 @@
 #include "stdlib.h"
 #include "parsearguments.h"
 #include <cassert>
+#include <cstdio>
+
 #ifdef _WIN32
 #include <direct.h>
 #else
@@ -102,11 +104,15 @@ int main(int argc, char *argv[])
     a.installTranslator(&myTranslator);
     MainWindow w;
 
+	int r_chdir{};
+
 #ifdef _WIN32
-    _chdir("F:/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+    r_chdir = _chdir("F:/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
 #else
-    chdir("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+	r_chdir = chdir("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
 #endif
+
+	if(r_chdir) perror("problem setting working directory: ");
 
     w.show();
 

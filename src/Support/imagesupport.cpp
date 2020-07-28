@@ -58,7 +58,7 @@ void IO::UploadImage(GLViewWidget * gl, uint32_t * texture, uint8_t * data, glm:
 	GL_ASSERT;
 }
 
-CountedSizedArray<glm::i16vec4> IO::GetSprites(uint8_t * data, glm::i16vec2 size, int channels)
+CountedSizedArray<glm::i16vec4> IO::GetSprites(uint8_t * data, uint32_t, glm::i16vec2 size, int channels)
 {
 	std::vector<glm::i16vec4> r;
 
@@ -105,8 +105,10 @@ end:
 	return CountedSizedArray<glm::i16vec4>::FromArray(&r[0], r.size());
 }
 
-CountedSizedArray<glm::i16vec4> IO::GetCrop(uint8_t * data, glm::i16vec2 size, int channels, const CountedSizedArray<glm::i16vec4> sprites)
+CountedSizedArray<glm::i16vec4> IO::GetCrop(uint8_t * data, uint32_t data_bytes, glm::i16vec2 size, int channels, const CountedSizedArray<glm::i16vec4> sprites)
 {
+	assert(data_bytes >= (uint32_t) (size.x * size.y * channels));
+
 	CountedSizedArray<glm::i16vec4> r(sprites.size());
 
 	uint32_t mask = channels == 4? 0x000000FF : 0xFFFFFF00;
@@ -231,7 +233,7 @@ glm::i16vec4 IO::GetCrop  (uint8_t const* data, glm::i16vec2 size, int channels,
 }
 
 
-void IO::DownloadImage(GLViewWidget * gl, IO::Image * image,  uint32_t texture, int internalFormat)
+void IO::DownloadImage(GLViewWidget * gl, IO::Image * image,  uint32_t texture, int internalFormat, int format, int type)
 {
 	assert(image != nullptr);
 
@@ -253,10 +255,13 @@ void IO::DownloadImage(GLViewWidget * gl, IO::Image * image,  uint32_t texture, 
 
 	image->size           = glm::ivec2(width, height);
 	image->internalFormat = internalFormat;
-	image->format         = Qt_to_Gl::GetFormatFromInternalFormat(internalFormat);
-	image->type           = Qt_to_Gl::GetTypeFromInternalFormat(internalFormat);
+	image->format         = format < 0?  Qt_to_Gl::GetFormatFromInternalFormat(internalFormat) : format;
+	image->type           = type < 0? Qt_to_Gl::GetTypeFromInternalFormat(internalFormat) : type;
 
-	image->image.reset(new uint8_t[image->size.x * image->size.y * Qt_to_Gl::GetPixelByteWidth(image->format, image->type)]);
+	int bytes_per_pixel = Qt_to_Gl::GetPixelByteWidth(image->format, image->type);
+	image->bytes          = image->size.x * image->size.y * bytes_per_pixel;
+
+	image->image.reset(new uint8_t[image->bytes]);
 
 	_gl glGetTexImage(GL_TEXTURE_2D, 0, image->format, image->type, &image->image[0]);
 	GL_ASSERT;
@@ -349,7 +354,9 @@ IO::Image IO::LoadImage(const char * path)
 
 	QImage::Format GetTargetFormat(QImage::Format in, QImage::Format);
 
-	auto format = Qt_to_Gl::ImageUsesAlpha(newImage)? QImage::Format_ARGB32 : QImage::Format_RGB888; //Qt_to_Gl::GetTargetFormat(newImage);
+	bool uses_alpha = Qt_to_Gl::ImageUsesAlpha(newImage);
+
+	auto format = uses_alpha? QImage::Format_ARGB32 : QImage::Format_RGB888; //Qt_to_Gl::GetTargetFormat(newImage);
 
 	if(format != newImage.format())
 		newImage = newImage.convertToFormat(format,
@@ -362,11 +369,11 @@ IO::Image IO::LoadImage(const char * path)
 	image.format         = Qt_to_Gl::GetFormat(format);
 	image.internalFormat = Qt_to_Gl::GetInternalFormat(format);
 	image.type           = Qt_to_Gl::GetType(format);
+	image.bytes          =  image.size.y*newImage.bytesPerLine();
 
-	size_t size = image.size.y*newImage.bytesPerLine();
-	image.image.reset(new uint8_t[size]);
+	image.image.reset(new uint8_t[image.bytes]);
 
-	memcpy(&image.image[0], newImage.constBits(), size);
+	memcpy(&image.image[0], newImage.constBits(), image.bytes);
 
 	return image;
 }

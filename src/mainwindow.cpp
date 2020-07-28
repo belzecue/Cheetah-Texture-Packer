@@ -327,6 +327,10 @@ std::string MainWindow::GetImage()
 
     initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
 
+#ifndef _WIN32
+	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+#endif
+
     if(dialog.exec() == QDialog::Accepted)
 	{
 		return dialog.selectedFiles().first().toStdString();
@@ -340,6 +344,10 @@ std::string MainWindow::GetSpritePath()
     QFileDialog dialog(this, tr("Open Sprite"));
 
     initializeSpriteFileDialog(dialog, QFileDialog::AcceptOpen);
+
+#ifndef _WIN32
+	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
+#endif
 
     if(dialog.exec() == QDialog::Accepted)
 	{
