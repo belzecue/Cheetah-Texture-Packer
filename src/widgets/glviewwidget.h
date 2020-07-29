@@ -40,11 +40,29 @@ public:
 	glm::vec2 GetScreenPosition();
 	Bitwise   GetFlags(QMouseEvent * event);
 
-
     void  displayOpenGlError(const char * file, const char * function, int line);
+
+	struct TimerState
+	{
+		TimerState(GLViewWidget * w) :
+			widget(w),
+			value(w->PauseTimer())
+		{
+		}
+		~TimerState() { if(widget) widget->ResumeTimer(value); }
+
+	private:
+		GLViewWidget * widget;
+		bool           value;
+	};
 
 
 private:
+friend struct TimerState;
+
+	bool PauseTimer();
+	void ResumeTimer(bool);
+
 	void handleLoggedMessage(QOpenGLDebugMessage const& debugMessage);
 
 #if 0

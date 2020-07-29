@@ -44,6 +44,8 @@ void UnlitShader::bind(GLViewWidget* gl, Material * )
 	_gl glBindTexture(GL_TEXTURE_BUFFER, 0);
 
 	_gl glActiveTexture(GL_TEXTURE0);
+	_gl glBindTexture(GL_TEXTURE_BUFFER, 0);
+
 	_gl glUniform1i(u_texture, 0);
 	_gl glUniform1i(u_bufferTexture, 10);
 	_gl glUniform1f(u_layer , 0);

@@ -166,6 +166,13 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 	return vec4(linOut,srgbIn.w);
 }
 
+vec4 LINEARtoSRGB(vec4 srgbIn)
+{
+	vec3 bLess = step(vec3(0.04045),srgbIn.xyz);
+	vec3 linOut = mix( srgbIn.xyz/vec3(12.92), pow((srgbIn.xyz+vec3(0.055))/vec3(1.055),vec3(2.4)), bLess );
+	return vec4(linOut,srgbIn.w);
+}
+
 // Find the normal for this fragment, pulling either from a predefined normal map
 // or from the interpolated mesh normal and tangent attributes.
 vec3 getNormal(vec2 texCoord)
@@ -218,6 +225,43 @@ float microfacetDistribution(PBRInfo pbrInputs)
 	float roughnessSq = pbrInputs.alphaRoughness * pbrInputs.alphaRoughness;
 	float f = (pbrInputs.NdotH * roughnessSq - pbrInputs.NdotH) * pbrInputs.NdotH + 1.0;
 	return roughnessSq / (M_PI * f * f);
+}
+
+const mat3 ACESInputMat =
+	transpose(mat3(
+		0.59719, 0.35458, 0.04823,
+		0.07600, 0.90834, 0.01566,
+		0.02840, 0.13383, 0.83777
+	));
+
+const mat3 ACESOutputMat =
+transpose(mat3(
+	 1.60475, -0.53108, -0.07367,
+	-0.10208,  1.10813, -0.00605,
+	-0.00327, -0.07276,  1.07602
+));
+
+
+vec3 RRTAndODTFit(vec3 v)
+{
+	vec3 a = v * (v + 0.0245786f) - 0.000090537f;
+	vec3 b = v * (0.983729f * v + 0.4329510f) + 0.238081f;
+	return a / b;
+}
+
+vec3 ACESFitted(vec3 color)
+{
+	color = ACESInputMat * color;
+
+	// Apply RRT and ODT
+	color = RRTAndODTFit(color);
+
+	color = ACESOutputMat * color;
+
+	// Clamp to [0, 1]
+	color = clamp(color, vec3(0), vec3(1));
+
+	return color;
 }
 
 void main()
@@ -327,7 +371,7 @@ void main()
 
 	vec3 color = 10000 * diffuseContrib * diffuse(pbrInputs) + specContrib;
 
-	frag_color = vec4(color, baseColor.a);
+	frag_color = vec4(ACESFitted(color) * 1, baseColor.a);
 });
 
 }

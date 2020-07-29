@@ -248,7 +248,7 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 	{
 		glm::u8vec4 * image = (glm::u8vec4*)r.pointers[i];
 
-		for(uint32_t y = 0; y < header[i].height; ++i)
+		for(uint32_t y = 0; y < header[i].height; ++y)
 		{
 			uint16_t    * src = &file_data[header[i].row_offsets[y]];
 			glm::u8vec4 * dst = &image[0] + header[i].width*y;
@@ -286,7 +286,7 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 					glm::u8vec3 value = FromUint16(*src);
 
 					if(value.x == 0 && value.y == 0 && value.z == 0)
-						*dst = glm::u8vec4(0, 0, 0, 255);
+						*dst = glm::u8vec4(0, 0, 0, 0);
 					else
 						*dst = glm::u8vec4(value, 255);
 				}

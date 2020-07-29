@@ -20,7 +20,7 @@ public:
     virtual void bind(GLViewWidget* gl, Material * material) = 0;
 
 	static void bindTextures(GLViewWidget* gl, Material * material);
-	void bindTexture(GLViewWidget* gl, Tex);
+//	void bindTexture(GLViewWidget* gl, Tex);
 
 	void bindLayer(GLViewWidget* gl, int);
 	void bindCenter(GLViewWidget* gl, bool);

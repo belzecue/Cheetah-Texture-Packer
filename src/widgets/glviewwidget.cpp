@@ -64,6 +64,18 @@ GLViewWidget::~GLViewWidget()
 	VelvetShader::Shader.Release(this);
 }
 
+bool GLViewWidget::PauseTimer()
+{
+	bool active = timer.isActive();
+	timer.stop();
+	return active;
+}
+
+void GLViewWidget::ResumeTimer(bool active)
+{
+	if(active) timer.start();
+}
+
 glm::vec2 GLViewWidget::GetScreenPosition(QMouseEvent * event)
 {
 	return glm::vec2(event->pos().x() - width()*.5f,

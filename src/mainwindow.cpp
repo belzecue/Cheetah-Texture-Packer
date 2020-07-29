@@ -309,7 +309,7 @@ static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMo
 
 static void initializeSpriteFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode)
 {
-	QStringList mimeTypeFilters = { "C1 (*.spr *.Spr *.sPr *.spR *.SPr *.SpR *.sRP *.SPR)" , "C2 (*.s16 *.S16)", "C2E (*.c16 *.C16)", "All supported formats (*.spr *.Spr *.sPr *.spR *.SPr *.SpR *.sRP *.SPR *.c16 *.C16 *.s16 *.S16)" };
+	QStringList mimeTypeFilters = { "C1 (*.[sS][pP][rR])" , "C2 (*.[Ss]16)", "C2E (*.[Cc]16)", "All supported formats (*.[sS][pP][rR] *.[Ss]16 *.[Cc]16)" };
 
 	dialog.setNameFilters(mimeTypeFilters);
 	dialog.selectNameFilter(mimeTypeFilters.back());
@@ -323,6 +323,8 @@ static void initializeSpriteFileDialog(QFileDialog &dialog, QFileDialog::AcceptM
 #endif
 std::string MainWindow::GetImage()
 {
+	GLViewWidget::TimerState pause_timer(ui->viewWidget);
+
     QFileDialog dialog(this, tr("Open File"));
 
     initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
@@ -341,6 +343,8 @@ std::string MainWindow::GetImage()
 
 std::string MainWindow::GetSpritePath()
 {
+	GLViewWidget::TimerState pause_timer(ui->viewWidget);
+
     QFileDialog dialog(this, tr("Open Sprite"));
 
     initializeSpriteFileDialog(dialog, QFileDialog::AcceptOpen);

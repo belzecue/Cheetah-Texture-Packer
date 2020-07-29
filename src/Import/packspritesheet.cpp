@@ -153,6 +153,7 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 	{
 		_gl glGenTextures(1, &r);
 
+		_gl glActiveTexture(GL_TEXTURE0);
 		_gl glBindTexture(GL_TEXTURE_2D, r);
 
 		_gl glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
@@ -218,6 +219,8 @@ uint32_t PackSpriteSheet::UploadData(GLViewWidget *gl, void ** sprites, uint32_t
 
 			GL_ASSERT;
 		}
+
+		_gl glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	catch(...)
 	{
