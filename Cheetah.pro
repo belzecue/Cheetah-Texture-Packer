@@ -34,6 +34,7 @@ SOURCES += src/main.cpp\
 	../../../Libraries/fx-gltf/src/fx/gltf.cpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.cpp \
 	src/Import/import_c16.cpp \
+	src/Import/linearizesprite.cpp \
 	src/Import/packspritesheet.cpp \
 	src/Import/super_xbr.cpp \
 	src/Import/upscalesprite.cpp \
@@ -51,6 +52,7 @@ SOURCES += src/main.cpp\
 	src/Sprite/image.cpp \
 	src/Sprite/material.cpp \
 	src/Sprite/object.cpp \
+	src/Sprite/spritejson.cpp \
 	src/Sprite/spritesheet.cpp \
 	src/Support/counted_string.cpp \
 	src/Support/imagesupport.cpp \
@@ -82,6 +84,7 @@ HEADERS  += src/mainwindow.h \
 	../../../Libraries/fx-gltf/src/fx/gltf_forward.hpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.h \
 	src/Import/import_c16.h \
+	src/Import/linearizesprite.h \
 	src/Import/packspritesheet.h \
 	src/Import/super_xbr.h \
 	src/Import/upscalesprite.h \
@@ -99,6 +102,7 @@ HEADERS  += src/mainwindow.h \
 	src/Sprite/image.h \
 	src/Sprite/material.h \
 	src/Sprite/object.h \
+	src/Sprite/spritejson.h \
 	src/Sprite/spritesheet.h \
 	src/Support/counted_ptr.hpp \
 	src/Support/counted_string.h \

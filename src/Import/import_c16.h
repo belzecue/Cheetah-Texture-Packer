@@ -25,6 +25,11 @@ public:
 	auto size() const { return count; }
 	bool empty() const { return !count; }
 
+	size_t GetTotalPixels() const;
+
+	void AllocHeap();
+	void CreatePointers();
+
 	CountedSizedArray<glm::u16vec2> sizes;
 	CountedSizedArray<void*>        pointers;
 	CountedSizedArray<uint8_t>      heap;

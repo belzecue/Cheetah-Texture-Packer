@@ -1,5 +1,6 @@
 #include "import_c16.h"
 #include "widgets/glviewwidget.h"
+#include "Support/qt_to_gl.h"
 #include <cstring>
 #include <cctype>
 #include <fstream>
@@ -20,6 +21,37 @@ SpriteFile::SpriteFile(uint32_t size, uint32_t heap_size, uint32_t internal_form
 	type(type)
 {
 }
+
+size_t  SpriteFile::GetTotalPixels() const
+{
+	size_t r{};
+
+	for(uint16_t i = 0; i < sizes.size(); ++i)
+		r += sizes[i].x * sizes[i].y;
+
+	return r;
+}
+
+void SpriteFile::AllocHeap()
+{
+	heap = CountedSizedArray<uint8_t>(GetTotalPixels() * Qt_to_Gl::GetPixelByteWidth(format, type));
+	CreatePointers();
+}
+
+void SpriteFile::CreatePointers()
+{
+	int bbp = Qt_to_Gl::GetPixelByteWidth(format, type);
+
+	pointers = CountedSizedArray<void*>(sizes.size());
+	uint8_t * ptr = &heap[0];
+
+	for(uint16_t i = 0; i < pointers.size(); ++i)
+	{
+		pointers[i] = ptr;
+		ptr += sizes[i].x * sizes[i].y * bbp;
+	}
+}
+
 
 SpriteFile SpriteFile::OpenSprite(const char * path)
 {
@@ -183,7 +215,7 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 //we use offsets to read the file so just copy the whole fucker into a buffer.
 	fp.seekg(0, std::ios_base::end);
 	uint32_t file_size = fp.tellg();
-	std::unique_ptr<uint16_t[]> file_data(new uint16_t[file_size]);
+	std::unique_ptr<uint8_t[]> file_data(new uint8_t[file_size]);
 	fp.seekg(0, std::ios_base::beg);
 	fp.read((char*)&file_data[0], file_size);
 
@@ -220,9 +252,9 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 			fp.read((char*)&header[i].row_offsets[1], 4 * (header[i].height-1));
 		}
 
-		for(auto i : header[i].row_offsets)
+		for(auto j : header[i].row_offsets)
 		{
-			if(i > file_size)
+			if(j > file_size)
 				throw std::runtime_error("C16 line offset outside of file...");
 		}
 	}
@@ -232,14 +264,7 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 
 //copy sizes
 	for(uint16_t i = 0; i < no_files; ++i)	r.sizes   [i] = glm::u16vec2(header[i].width, header[i].height);
-
-//set offsets
-	no_pixels = 0;
-	for(uint16_t i = 0; i < no_files; ++i)
-	{
-		r.pointers[i] = &r.heap[no_pixels];
-		no_pixels += (header[i].width * header[i].height) * 4;
-	}
+	r.CreatePointers();
 
 	const auto FromUint16 = (type & 0x01)? &From565 : &From555;
 	const void * endm     = &file_data[0] + file_size;
@@ -247,14 +272,16 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 	for(uint16_t i = 0; i < no_files; ++i)
 	{
 		glm::u8vec4 * image = (glm::u8vec4*)r.pointers[i];
+	//	glm::u8vec4 * dst = image;
+
 
 		for(uint32_t y = 0; y < header[i].height; ++y)
 		{
-			uint16_t    * src = &file_data[header[i].row_offsets[y]];
+			uint16_t    * src = (uint16_t*)&file_data[header[i].row_offsets[y]];
 			glm::u8vec4 * dst = &image[0] + header[i].width*y;
 			const void  * end = &image[0] + header[i].width*(y+1);
 
-			assert(&file_data[0] < src && src < endm);
+			assert((void*)&file_data[0] <src && src < endm);
 
 			while(*src && src < endm)
 			{
@@ -269,15 +296,8 @@ SpriteFile SpriteFile::ReadC16(const char * path)
 
 				if(transparent)
 				{
-					memset(dst, 0, 4 * length);
+					memset(dst, 0x00, 4 * length);
 					dst += length;
-					continue;
-				}
-				else
-				{
-					memset(dst, 0xFF, 4 * length);
-					dst += length;
-					src += length;
 					continue;
 				}
 

@@ -4,6 +4,7 @@
 #include "Shaders/transparencyshader.h"
 #include "Shaders/unlitshader.h"
 #include "Sprite/spritesheet.h"
+#include "Import/upscalesprite.h"
 #include "Import/import_c16.h"
 #include "Import/packspritesheet.h"
 #include <glm/glm.hpp>
@@ -95,6 +96,9 @@ void Image::LoadFromFile()
 		}
 		else
 		{
+			sprite = double_image(sprite);
+		//	sprite = double_image(sprite);
+
 			PackSpriteSheet sheet(sprite.sizes);
 
 			m_size     = sheet.size;
