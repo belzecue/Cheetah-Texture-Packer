@@ -63,10 +63,10 @@ struct Sprite : NeverEmpty
 	struct Frame : NeverEmpty
 	{
 		std::vector<std::array<short, 2>> attachments;
-		int32_t                           first_index;
-		int32_t                           no_indices;
+		int32_t                           start;
+		int32_t                           count;
 
-		std::array<uint16_t, 4>           bounding_box;
+		std::array<uint16_t, 4>           AABB;
 	};
 
 	std::string              name;
@@ -74,7 +74,7 @@ struct Sprite : NeverEmpty
 	int32_t                  indices{-1};
 	int32_t                  material{-1};
 
-	fx::gltf::Attributes     Attributes;
+	fx::gltf::Attributes     attributes;
 
 	std::vector<Frame>       frames;
 	std::vector<std::string> attachments;
