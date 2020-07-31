@@ -7,15 +7,22 @@
 
 struct Document;
 
+namespace Sprites
+{
+struct Document;
+struct Sprite;
+}
+
 struct Object
 {
 	struct Attachment
 	{
 		counted_string            name;
-		std::vector<glm::i16vec4> attachments;
+		std::vector<glm::i16vec2> coords;
 		bool dirty{};
 	};
 
+	Object(GLViewWidget * gl, Sprites::Sprite const&, Sprites::Document const& doc);
 	Object(GLViewWidget * gl) : gl(gl) {}
 	~Object() { material->Clear(gl); }
 

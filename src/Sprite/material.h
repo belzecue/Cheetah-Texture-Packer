@@ -56,6 +56,9 @@ public:
 
 	KHR::materials::pbrSpecularGlossiness pbrSpecularGlossiness;
 	KHR::materials::unlit                 unlit;
+#if KHR_SHEEN
+	KHR::materials::sheen                 sheen;
+#endif
 
 	counted_ptr<Image>                    image_slots[(int)Tex::Total];
 	Material::Tex                         current_slot{Tex::None};

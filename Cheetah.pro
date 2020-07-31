@@ -48,6 +48,7 @@ SOURCES += src/main.cpp\
 	src/Shaders/unlitshader.cpp \
 	src/Shaders/velvetshader.cpp \
 	src/Sprite/animation.cpp \
+	src/Sprite/countedgltfimage.cpp \
 	src/Sprite/document.cpp \
 	src/Sprite/image.cpp \
 	src/Sprite/material.cpp \
@@ -98,6 +99,7 @@ HEADERS  += src/mainwindow.h \
 	src/Shaders/unlitshader.h \
 	src/Shaders/velvetshader.h \
 	src/Sprite/animation.h \
+	src/Sprite/countedgltfimage.h \
 	src/Sprite/document.h \
 	src/Sprite/image.h \
 	src/Sprite/material.h \

@@ -82,6 +82,7 @@ private:
 	counted_string                  m_path;
 	counted_string                  m_directory;
 	counted_string                  m_filename;
+	counted_string                  m_mimetype;
 
 	glm::i16vec2                    m_size{0, 0};
 	uint8_t                         m_channels{0};

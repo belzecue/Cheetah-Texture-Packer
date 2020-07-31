@@ -1,6 +1,7 @@
 #include "object.h"
 #include "document.h"
 #include "Support/imagesupport.h"
+#include "Sprite/spritejson.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <fx/gltf.h>
@@ -17,6 +18,72 @@ void Object::RenderAttachments(GLViewWidget *, int attachment)
 
 
 }
+
+Object::Object(GLViewWidget * gl, Sprites::Sprite const& spr, Sprites::Document const& doc) :
+	gl(gl)
+{
+	name = counted_string::MakeShared(spr.name);
+
+//copy animations
+	animations.resize(spr.animations.size());
+
+	for(uint32_t i = 0; i < animations.size(); ++i)
+	{
+		auto r = UncountedWrap(new Animation());
+
+		r->name       =  counted_string::MakeShared(spr.animations[i].name);
+		r->fps        = spr.animations[i].fps;
+		r->loop_start = spr.animations[i].loop_start;
+		r->loop_end   = spr.animations[i].loop_end;
+
+		if(!spr.animations[i].frames.empty())
+			r->frames = CountedSizedArray<uint16_t>::FromArray(
+				&spr.animations[i].frames[0],
+				 spr.animations[i].frames.size());
+
+		animations[i] = std::move(r);
+	}
+
+//copy attachments
+	attachments.resize(spr.attachments.size());
+
+	for(uint32_t i = 0; i < attachments.size(); ++i)
+	{
+		attachments[i].name = counted_string::MakeShared(spr.attachments[i]);
+		attachments[i].dirty = true;
+
+		attachments[i].coords.reserve(spr.frames.size());
+		for(uint32_t j = 0; j < spr.frames.size(); ++j)
+			attachments[i].coords.push_back({spr.frames[j].attachments[i][0], spr.frames[j].attachments[i][1]});
+	}
+
+	material.reset(new Material);
+
+//copy material
+	const nlohmann::json::const_iterator extensions =  doc.materials[spr.material].extensionsAndExtras.find("extensions");
+	if(extensions != doc.materials[spr.material].extensionsAndExtras.end())
+	{
+		auto itr = extensions->find("KHR_materials_pbrSpecularGlossiness");
+
+		if(itr != extensions->end())
+			KHR::materials::from_json(itr->get<nlohmann::json>(), material.get()->pbrSpecularGlossiness);
+
+		itr = extensions->find("KHR_materials_unlit");
+
+		if(itr != extensions->end())
+			KHR::materials::from_json(itr->get<nlohmann::json>(), material.get()->unlit);
+
+#if KHR_SHEEN
+		itr = extensions->find("KHR_materials_sheen");
+
+		if(itr != extensions->end())
+			KHR::materials::from_json(itr->get<nlohmann::json>(), material.get()->sheen);
+#endif
+	}
+
+	*static_cast<fx::gltf::Material*>(material.get()) = doc.materials[spr.material];
+}
+
 
 #if 0
 void Object::UpdateImages(Document* doc)

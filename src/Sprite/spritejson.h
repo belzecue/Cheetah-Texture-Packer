@@ -49,50 +49,36 @@ constexpr auto SaveInternal        = fx::gltf::detail::Save;
 
 struct Animation
 {
-	std::string      name;
-	std::vector<int> frames;
-	float            fps{20};
+	std::string           name;
+	std::vector<uint16_t> frames;
+	float                 fps{20};
+	uint16_t              loop_start{0};
+	uint16_t              loop_end{0};
 
 	nlohmann::json extensionsAndExtras{};
-};
-
-struct AtlasFile : NeverEmpty
-{
-	void Load();
-
-	struct Frame  : NeverEmpty
-	{
-		std::string             image;
-		std::array<uint16_t, 4> bounding_box;
-		std::array<uint16_t, 4> crop_box;
-		bool                    rotated;
-	};
-
-	std::string              path;
-	std::string              imageFile;
-	std::vector<Frame>       frames;
 };
 
 struct Sprite : NeverEmpty
 {
 	struct Frame : NeverEmpty
 	{
-		std::array<uint16_t, 4> texCoord0;
-		std::array<uint16_t, 4> texCoord1;
-		bool                    rotated0;
-		bool                    rotated1;
-
 		std::vector<std::array<short, 2>> attachments;
+		int32_t                           first_index;
+		int32_t                           no_indices;
+
+		std::array<uint16_t, 4>           bounding_box;
 	};
 
 	std::string              name;
 
-	std::array<uint16_t, 4>  bounding_box;
+	int32_t                  indices{-1};
+	int32_t                  material{-1};
 
-	int                      material{-1};
+	fx::gltf::Attributes     Attributes;
+
 	std::vector<Frame>       frames;
-	std::vector<uint16_t>    animations;
 	std::vector<std::string> attachments;
+	std::vector<Animation>   animations;
 
 	nlohmann::json extensionsAndExtras{};
 };
@@ -102,15 +88,15 @@ struct Document
 	Asset                   asset;
 
 	std::vector<Sprite>     sprites{};
-	std::vector<Animation>  animations{};
+
+	std::vector<Accessor>   accessors{};
+	std::vector<BufferView> bufferViews{};
+	std::vector<Buffer>     buffers{};
 
 	std::vector<Material>   materials{};
 	std::vector<Texture>    textures{};
 	std::vector<Image>      images{};
 	std::vector<Sampler>    samplers{};
-
-	std::vector<BufferView> bufferViews{};
-	std::vector<Buffer>     buffers{};
 
 	std::vector<std::string> extensionsUsed{};
 	std::vector<std::string> extensionsRequired{};

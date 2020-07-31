@@ -14,6 +14,11 @@
 #include <memory>
 #include <atomic>
 
+namespace Sprites
+{
+struct Document;
+}
+
 class CommandInterface;
 class MainWindow;
 class GLViewWidget;
@@ -22,7 +27,10 @@ struct Document;
 
 struct Document
 {
+	Document(GLViewWidget * gl, Sprites::Document const&);
 	Document(GLViewWidget*gl) : imageManager(gl) {}
+
+	Sprites::Document ToExportDocument();
 
 	Image::ImageManager   imageManager;
 	PackerSettings        settings;

@@ -2,6 +2,7 @@
 #include "mainwindow.h"
 #include "Sprite/object.h"
 #include "ui_mainwindow.h"
+#include "Sprite/spritejson.h"
 #include "widgets/glviewwidget.h"
 #include "Shaders/transparencyshader.h"
 #include "Shaders/unlitshader.h"
@@ -121,4 +122,22 @@ void Document::RenderAnimation(GLViewWidget * gl,  Object* object, int id)
 GLViewWidget * Document::GetViewWidget() const
 {
 	return window->ui->viewWidget;
+}
+
+Document::Document(GLViewWidget * gl, Sprites::Document const& doc) :
+	imageManager(gl)
+{
+	objects.reserve(doc.sprites.size());
+
+	for(auto &item : doc.sprites)
+		objects.push_back(UncountedWrap(new Object(gl, item, doc)));
+}
+
+Sprites::Document ToExportDocument()
+{
+	Sprites::Document r;
+
+
+
+	return r;
 }

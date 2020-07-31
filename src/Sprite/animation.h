@@ -12,6 +12,9 @@ struct Animation
 	counted_string              name;
 	CountedSizedArray<uint16_t> frames;
 	float                       fps{20};
+	uint16_t              loop_start{0};
+	uint16_t              loop_end{0};
+
 
 	Animation& operator=(Animation const& it)
 	{
