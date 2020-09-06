@@ -336,8 +336,7 @@ void IO::DownloadImage(GLViewWidget * gl, QImage * image,  uint32_t texture)
 }
 
 
-
-std::string IO::MimeType(const char * path)
+std::string IO::MimeType(const char * path) 
 {
 	QImageReader reader(path);
 	QString result = "image/" + reader.format();

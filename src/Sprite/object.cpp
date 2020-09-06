@@ -66,12 +66,12 @@ Object::Object(GLViewWidget * gl, Sprites::Sprite const& spr, Sprites::Document 
 		auto itr = extensions->find("KHR_materials_pbrSpecularGlossiness");
 
 		if(itr != extensions->end())
-			KHR::materials::from_json(itr->get<nlohmann::json>(), material.get()->pbrSpecularGlossiness);
+			KHR::materials::from_json(itr->get<nlohmann::json>(), material.get()->ext.pbrSpecularGlossiness);
 
 		itr = extensions->find("KHR_materials_unlit");
 
 		if(itr != extensions->end())
-			KHR::materials::from_json(itr->get<nlohmann::json>(), material.get()->unlit);
+			KHR::materials::from_json(itr->get<nlohmann::json>(), material.get()->ext.unlit);
 
 #if KHR_SHEEN
 		itr = extensions->find("KHR_materials_sheen");
@@ -82,6 +82,45 @@ Object::Object(GLViewWidget * gl, Sprites::Sprite const& spr, Sprites::Document 
 	}
 
 	*static_cast<fx::gltf::Material*>(material.get()) = doc.materials[spr.material];
+}
+
+
+int Object::PackDocument(Sprites::Document & doc, PackMemo & memo)
+{
+	Sprites::Sprite sprite;
+
+	sprite.name = name.toStdString();
+	sprite.material = Material::PackDocument(material.get(), doc, memo);
+
+//pack attachments
+	sprite.attachments.resize(attachments.size());
+	for(uint32_t i = 0; i < attachments.size(); ++i)
+	{
+		sprite.attachments[i] = attachments[i].name.toStdString();
+	}
+
+//pack attachment locations
+	for(uint32_t j = 0; j < sprite.frames.size(); ++j)
+	{
+		sprite.frames[j].attachments.resize(sprite.attachments.size());
+
+		for(uint32_t i = 0; i < attachments.size(); ++i)
+		{
+			sprite.frames[j].attachments[i][0] = attachments[i].coords[j].x;
+			sprite.frames[j].attachments[i][1] = attachments[i].coords[j].y;
+		}
+	}
+
+//push animations
+	sprite.animations.resize(animations.size());
+
+	for(uint32_t i = 0; i < sprite.animations.size(); ++i)
+	{
+		sprite.animations[i] = animations[i]->PackDocument();
+	}
+
+	doc.sprites.push_back(sprite);
+	return doc.sprites.size()-1;
 }
 
 

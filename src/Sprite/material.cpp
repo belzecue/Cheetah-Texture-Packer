@@ -5,8 +5,10 @@
 #include "Shaders/gltfmetallicroughness.h"
 #include "Shaders/transparencyshader.h"
 #include "Shaders/unlitshader.h"
+#include "Support/packaccessor.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "spritesheet.h"
+#include "spritejson.h"
 #include <iostream>
 
 #define UNUSED(x) (void)x;
@@ -15,9 +17,9 @@
 Material::Material()
 {
 	pbrMetallicRoughness.baseColorTexture.texCoord = 2 + (int)Tex::BaseColor;
-	pbrSpecularGlossiness.diffuseTexture.texCoord  = 2 + (int)Tex::Diffuse;
+	ext.pbrSpecularGlossiness.diffuseTexture.texCoord  = 2 + (int)Tex::Diffuse;
 	pbrMetallicRoughness.metallicRoughnessTexture.texCoord = 2 + (int)Tex::MetallicRoughness;
-	pbrSpecularGlossiness.specularGlossinessTexture.texCoord = 2 + (int)Tex::SpecularGlossiness;
+	ext.pbrSpecularGlossiness.specularGlossinessTexture.texCoord = 2 + (int)Tex::SpecularGlossiness;
 	normalTexture.texCoord    = 2 + (int)Tex::Normal;
 	occlusionTexture.texCoord = 2 + (int)Tex::Occlusion;
 	emissiveTexture.texCoord  = 2 + (int)Tex::Emission;
@@ -388,4 +390,97 @@ void Material::RenderSheetBackdrop(GLViewWidget * gl, RenderData const& db)
 
 	m_spriteSheet->Prepare(gl, m_sprites, m_sheetSize);
 	m_spriteSheet->RenderSheet(gl, db);
+}
+
+
+inline void to_json(nlohmann::json & json, MaterialExtensions const & material)
+{
+	fx::gltf::detail::WriteField("KHR_materials_pbrSpecularGlossiness", json, material.pbrSpecularGlossiness);
+	fx::gltf::detail::WriteField("KHR_materials_unlit", json, material.unlit);
+
+#if KHR_SHEEN
+	fx::gltf::detail::WriteField("KHR_materials_sheen", json, material.sheen);
+#endif
+}
+
+void from_json(nlohmann::json const& json, MaterialExtensions & material)
+{
+	fx::gltf::detail::ReadOptionalField("KHR_materials_pbrSpecularGlossiness", json, material.pbrSpecularGlossiness);
+	fx::gltf::detail::ReadOptionalField("KHR_materials_unlit", json, material.unlit);
+
+#if KHR_SHEEN
+	fx::gltf::detail::ReadOptionalField("KHR_materials_sheen", json, material.sheen);
+#endif
+}
+
+//image is the orignal image not the compressed image.
+void PackTexture(fx::gltf::Material::Texture * dst, Image * This, int texCoords, Sprites::Document & doc, PackMemo & memo)
+{
+	if(This == nullptr)
+	{
+		dst->index = -1;
+		dst->texCoord = -1;
+		return;
+	}
+
+	auto itr = memo.mapping.find(This);
+	if(itr != memo.mapping.end())
+	{
+		dst->index = itr->second;
+		dst->texCoord = texCoords;
+		return;
+	}
+
+//push sampler
+	fx::gltf::Texture texture;
+	texture.source = doc.images.size();
+	doc.textures.push_back(texture);
+
+
+	uint32_t file_size{};
+	auto buffer = This->LoadFileAsArray(file_size);
+
+	fx::gltf::Image   image;
+
+	image.name = This->getFilename();
+	image.bufferView = memo.PackBufferView(buffer.release(), file_size);
+
+	auto r = doc.images.size();
+	doc.images.push_back(image);
+
+	dst->index	  = r;
+	dst->texCoord = texCoords;
+}
+
+int Material::PackDocument(Material * This, int32_t * images, Sprites::Document & doc, PackMemo & memo)
+{
+	if(This == nullptr)
+		return -1;
+
+	auto itr = memo.mapping.find(This);
+	if(itr != memo.mapping.end())
+		return itr->second;
+
+	const int material_id = doc.materials.size();
+	memo.mapping.emplace(This, material_id);
+
+	doc.materials.push_back(*This);
+	auto & mat = doc.materials.back();
+
+//duplicate it so we can change things around...
+	MaterialExtensions ext = This->ext;
+
+#define PackImage(path, index) PackTexture(&path, This->image_slots[(int)index].get(), This->tex_coords[(int)index], doc, memo)
+
+	PackImage(mat.pbrMetallicRoughness.baseColorTexture, Tex::BaseColor);
+	PackImage(ext.pbrSpecularGlossiness.diffuseTexture, Tex::Diffuse);
+	PackImage(mat.pbrMetallicRoughness.metallicRoughnessTexture, Tex::MetallicRoughness);
+	PackImage(ext.pbrSpecularGlossiness.specularGlossinessTexture, Tex::SpecularGlossiness);
+	PackImage(mat.normalTexture, Tex::Normal);
+	PackImage(mat.occlusionTexture, Tex::Occlusion);
+	PackImage(mat.emissiveTexture, Tex::Emission);
+
+	fx::gltf::detail::WriteField("extensions", mat.extensionsAndExtras, ext);
+
+	return material_id;
 }

@@ -5,7 +5,7 @@
 #include "Support/countedsizedarray.hpp"
 
 class GLViewWidget;
-class RenderData;
+struct RenderData;
 
 class SpriteSheet
 {

@@ -5,7 +5,7 @@
 #include <glm/mat4x4.hpp>
 #include <atomic>
 
-class Material;
+struct Material;
 
 class gltfMetallicRoughness : public SpriteShaderBase
 {

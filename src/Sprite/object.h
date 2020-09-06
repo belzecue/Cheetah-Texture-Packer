@@ -13,6 +13,8 @@ struct Document;
 struct Sprite;
 }
 
+struct PackMemo;
+
 struct Object
 {
 	struct Attachment
@@ -43,6 +45,8 @@ struct Object
 //loosen coupling
 	inline auto RenderObjectSheet(GLViewWidget *gl, int frame = -1) { return material->RenderObjectSheet(gl, frame); }
 	inline auto RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, int frame = -1) { return material->RenderSpriteSheet(gl, image_slot, frame);  }
+
+	int PackDocument(Sprites::Document & doc, PackMemo & mapping);
 
 private:
 	mutable std::atomic<int> m_refCount{1};

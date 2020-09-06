@@ -8,7 +8,9 @@
 #include "Shaders/unlitshader.h"
 #include "Shaders/gltfmetallicroughness.h"
 #include "Shaders/defaultvaos.h"
+#include "Support/packaccessor.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <QMessageBox>
 
 
 CommandInterface * Document::addCommand(std::unique_ptr<CommandInterface> it)
@@ -17,7 +19,7 @@ CommandInterface * Document::addCommand(std::unique_ptr<CommandInterface> it)
 	commandList.push_back(std::move(it));
 	commandId++;
 
-	window->OnDocumentChanged();
+	m_window->OnDocumentChanged();
 
 	return commandList.back().get();
 }
@@ -29,7 +31,7 @@ void Document::editUndo()
 		--commandId;
 		commandList[commandId]->RollBack();
 
-		window->OnDocumentChanged();
+		m_window->OnDocumentChanged();
 	}
 }
 
@@ -40,14 +42,53 @@ void Document::editRedo()
 		commandList[commandId]->RollForward();
 		++commandId;
 
-		window->OnDocumentChanged();
+		m_window->OnDocumentChanged();
 	}
 }
 
 void Document::OnError(std::string const& what)
 {
-	window->DisplayError(what);
+	m_window->DisplayError(what);
 }
+
+Sprites::Document Document::PackDocument()
+{
+	Sprites::Document r;
+
+	r.asset.copyright = "Lifaundi Official 2020";
+	r.asset.generator = "Cheetah";
+	r.asset.minVersion = "0.0";
+
+	PackMemo memo;
+
+	for(uint32_t i = 0; i < objects.size(); ++i)
+		objects[i]->PackDocument(r, memo);
+
+	memo.PackDocument(r);
+
+	return r;
+}
+
+bool Document::SaveFile(QFileInfo const& Path)
+{
+	try
+	{
+
+		Sprites::Save(PackDocument(), Path.filePath().toStdString(), true);
+	}
+	catch(std::exception & e)
+	{
+		QMessageBox::critical(m_window, "Error Saving File", e.what());
+		return false;
+	}
+
+	m_path = Path;
+	m_title = Path.fileName();
+
+	m_window->SetAsterisk(false);
+	return true;
+}
+
 /*
 void Document::RenderObjectSheet(GLViewWidget * gl, Object* object, int frame)
 {
@@ -121,7 +162,7 @@ void Document::RenderAnimation(GLViewWidget * gl,  Object* object, int id)
 
 GLViewWidget * Document::GetViewWidget() const
 {
-	return window->ui->viewWidget;
+	return m_window->ui->viewWidget;
 }
 
 Document::Document(GLViewWidget * gl, Sprites::Document const& doc) :

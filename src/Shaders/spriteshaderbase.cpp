@@ -104,7 +104,7 @@ void SpriteShaderBase::bindTextures(GLViewWidget* gl, Material * material)
 	}
 
 
-	bool use_specular = !material->pbrSpecularGlossiness.is_empty;
+	bool use_specular = !material->ext.pbrSpecularGlossiness.is_empty;
 
 	_gl glActiveTexture(GL_TEXTURE0);
 	if(use_specular && material->image_slots[(int)Tex::Diffuse])

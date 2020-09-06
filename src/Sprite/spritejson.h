@@ -73,6 +73,8 @@ struct Sprite : NeverEmpty
 
 	int32_t                  indices{-1};
 	int32_t                  material{-1};
+//original images
+	std::vector<int32_t>     images;
 
 	fx::gltf::Attributes     attributes;
 

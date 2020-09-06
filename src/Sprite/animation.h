@@ -4,6 +4,11 @@
 #include "Support/counted_string.h"
 #include <atomic>
 
+namespace Sprites
+{
+struct Animation;
+}
+
 struct Animation
 {
 	Animation() = default;
@@ -15,6 +20,7 @@ struct Animation
 	uint16_t              loop_start{0};
 	uint16_t              loop_end{0};
 
+	Sprites::Animation PackDocument() const;
 
 	Animation& operator=(Animation const& it)
 	{

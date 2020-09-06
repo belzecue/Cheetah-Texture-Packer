@@ -36,13 +36,13 @@ public:
 	std::unique_ptr<Document>    document;
 	std::unique_ptr<SpriteModel> model;
 
-	QShortcut * m_delete;
+	QShortcut * m_delete{};
 	QString outDir;
 	QString outFile;
 	QString outFormat;
 	QString imgFormat;
 
-	Ui::MainWindow *ui;
+	Ui::MainWindow *ui{};
 
 	float SetZoom(float);
 	float GetZoom() { return m_zoom; };
@@ -58,6 +58,8 @@ public:
 	void DisplayError(std::string const& what);
 	std::string GetImage();
 
+	bool SetAsterisk(bool value);
+
 protected:
 //	void dropEvent(QDropEvent *event);
 //	void dragEnterEvent(QDragEnterEvent *event);
@@ -72,23 +74,26 @@ public:
 	void clearTiles();
 
 private:
-	void onSave();
+	bool fileSave();
+	bool fileSaveAs();
+
 	void ImportSprite();
 	std::string GetSpritePath();
 	void displayStatus(quint64 image_area, quint64 packer_area, quint64 neededArea, int missingImages, int mergedImages);
 
-	View   * m_view;
-	QLabel * m_status;
-	QLabel * m_scale;
+	View   * m_view{};
+	QLabel * m_status{};
+	QLabel * m_scale{};
 
-	SettingsPanel * prefs;
+	SettingsPanel * prefs{};
 
 	void RecurseDirectory(const QString &dir);
 	QString topImageDir;
 
-	bool exporting;
-	int recursiveLoaderCounter;
-	bool recursiveLoaderDone;
+	bool exporting{};
+	bool m_asterisk{};
+	bool recursiveLoaderDone{};
+	int recursiveLoaderCounter{};
 	float m_zoom{1.f};
 	void addDir(QString dir);
 };

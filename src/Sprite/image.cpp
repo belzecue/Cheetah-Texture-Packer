@@ -11,6 +11,7 @@
 #include <fx/gltf.h>
 #include <cctype>
 #include <cstring>
+#include <fstream>
 #include <climits>
 
 #include "Support/qt_to_gl.h"
@@ -34,22 +35,15 @@ counted_ptr<Image> Image::Factory(ImageManager * manager, std::string const& doc
 	if(itr != manager->loadedImages.end())
 		return CountedWrap(itr->second);
 
-	const std::size_t slash_pos = documentFilePath.find_last_of("/\\");
-	const std::size_t period_pos = documentFilePath.find_last_of(".");
-
-	counted_string directory = counted_string::MakeShared(documentFilePath.substr(0, slash_pos));
-	counted_string filename = counted_string::MakeShared(documentFilePath.substr(slash_pos+1, period_pos-(slash_pos+1)));
-
-	auto ptr = UncountedWrap(new Image(manager, path, std::move(directory), std::move(filename)));
+	auto ptr = UncountedWrap(new Image(manager, documentFilePath));
 	manager->loadedImages.emplace(path, ptr.get());
 	return ptr;
 }
 
-Image::Image(ImageManager * manager, counted_string const& path, counted_string directory, counted_string filename) :
+
+Image::Image(ImageManager * manager, std::string const& path) :
 	m_manager(manager),
-	m_path(path),
-	m_directory(directory),
-	m_filename(filename)
+	m_path(path)
 {
 	glDefaultVAOs::AddRef();
 	TransparencyShader::Shader.AddRef();
@@ -62,7 +56,8 @@ Image::Image(ImageManager * manager, counted_string const& path, counted_string 
 Image::~Image()
 {
 	std::lock_guard<std::mutex> lock(g_mutex);
-	auto itr = m_manager->loadedImages.find(m_path);
+
+	auto itr = m_manager->loadedImages.find(counted_string::Get(m_path));
 
 	if(itr != m_manager->loadedImages.end())
 		m_manager->loadedImages.erase(itr);
@@ -70,6 +65,60 @@ Image::~Image()
 	glDefaultVAOs::Release(m_manager->gl);
 	TransparencyShader::Shader.Release(m_manager->gl);
 	UnlitShader::Shader.Release(m_manager->gl);
+}
+
+/*
+ * This is wrong; copy memory from GL
+ * set Qwriter device to QBuffer
+ * Write to byte array
+ * copy to unique_ptr...
+ * i guess?
+std::unique_ptr<uint8_t[]> Image::LoadFileAsArray(uint32_t & size) const
+{
+	std::string str = m_path;
+	std::ifstream file(str.c_str(), std::ios_base::binary);
+
+	if(!file.is_open())
+		throw std::system_error(errno, std::system_category(), str);
+
+	file.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
+
+	file.seekg(0, std::fstream::end);
+	size = file.tellg();
+	file.seekg(0, std::fstream::beg);
+
+	std::unique_ptr<uint8_t[]> r(new uint8_t[size]);
+	file.read((char*)&r[0], size);
+
+	return r;
+}*/
+
+std::string Image::getFilename() const
+{
+	const std::size_t slash_pos = m_path.find_last_of("/\\");
+	const std::size_t period_pos = m_path.find_last_of(".");
+
+	if(period_pos != std::string::npos
+	&& slash_pos != std::string::npos)
+		return m_path.substr(slash_pos+1, period_pos-(slash_pos+1));
+
+	return {};
+}
+
+std::string Image::getDirectory() const
+{
+	const std::size_t pos = m_path.find_last_of("/\\");
+	if (pos != std::string::npos)
+	{
+		return m_path.substr(0, pos);
+	}
+
+	return {};
+}
+
+std::string Image::getMimeType() const
+{
+	return IO::MimeType(m_path.c_str());
 }
 
 void Image::LoadFromFile()

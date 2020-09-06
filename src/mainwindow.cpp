@@ -14,6 +14,7 @@
 #include <QImageWriter>
 #include <QShortcut>
 #include <QKeySequence>
+#include <QDateTime>
 #include <QMenu>
 #include <QPainter>
 #include <iostream>
@@ -39,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	prefs = new SettingsPanel(*this);
 
 	document.reset(new Document(ui->viewWidget));
-	document->window = this;
+	document->m_window = this;
 
 //configure tree
 	model.reset(new SpriteModel(this));
@@ -109,7 +110,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	});
 
 	connect(ui->fileOpen, &QAction::triggered, this, &MainWindow::addTiles);
-	connect(ui->fileSave, &QAction::triggered, this, &MainWindow::onSave);
+	connect(ui->fileSave, &QAction::triggered, this, &MainWindow::fileSave);
+	connect(ui->fileSaveAs, &QAction::triggered, this, &MainWindow::fileSaveAs);
 	connect(ui->m_about, &QAction::triggered, [this]() {
 		QMessageBox::information(this, QString("About %1").arg(windowTitle()),
 		"Original by github.com/scriptum\nUpdated by github.com/pdjeeves\nUsed code by Hyllian - sergiogdb@gmail.com");
@@ -188,8 +190,40 @@ void MainWindow::RecurseDirectory(const QString &dir)
     }
 }
 
-void MainWindow::onSave()
+bool MainWindow::SetAsterisk(bool value)
 {
+	m_asterisk = value;
+	setWindowTitle(tr("%1%2 - Map Editor").arg(value? "*" : "", document->Name()));
+	return true;
+}
+
+bool MainWindow::fileSaveAs()
+{
+	static QDir g_filePath = QDir::home();
+
+	QFileDialog dialog(this, tr("Save Background File"));
+	dialog.setAcceptMode(QFileDialog::AcceptSave);
+	dialog.setNameFilter("Room System (*.lf_mta)");
+	dialog.setDirectory(g_filePath);
+
+	bool accepted;
+	while ((accepted = (dialog.exec() == QDialog::Accepted)) && !document->SaveFile(dialog.selectedFiles().first())) {}
+
+	if(!accepted)
+		return false;
+
+	g_filePath = dialog.directory();
+
+	return true;
+}
+
+bool MainWindow::fileSave()
+{
+	if(!document->m_path.isFile())
+		return fileSaveAs();
+
+	return document->SaveFile(document->m_path);
+
     exportImage();
 }
 
@@ -333,9 +367,39 @@ std::string MainWindow::GetImage()
 	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
 #endif
 
-    if(dialog.exec() == QDialog::Accepted)
+    while(dialog.exec() == QDialog::Accepted)
 	{
-		return dialog.selectedFiles().first().toStdString();
+		QImageReader reader(dialog.selectedFiles().first());
+
+		if(reader.format() == "png"
+		|| reader.format() == "jpeg")
+			return dialog.selectedFiles().first().toStdString();
+
+		QFileInfo load_path = dialog.selectedFiles().first();
+		QFileInfo save_path = dialog.selectedFiles().first() + ".png";
+
+		if(save_path.exists()
+		&& save_path.fileTime(QFile::FileTime::FileModificationTime) > load_path.fileTime(QFile::FileTime::FileModificationTime))
+		{
+			return save_path.path().toStdString();
+		}
+
+		if(QMessageBox::Yes == QMessageBox::question(this, "Opening File...", "Can only pack png/jpeg files. Convert to PNG?"))
+		{
+			QImage newImage = reader.read();
+
+			if (newImage.isNull()) {
+				throw std::runtime_error(
+					QString("Cannot load %1: %2").arg(
+						QDir::toNativeSeparators(dialog.selectedFiles().first()),
+						reader.errorString()).toStdString());
+			}
+
+			QImageWriter writer(save_path.path());
+			writer.write(newImage);
+
+			return save_path.path().toStdString();
+		}
 	}
 
 	return std::string();
@@ -374,9 +438,9 @@ void MainWindow::ImportSprite()
 
 		auto image = Image::Factory(&document->imageManager, path);
 
-		auto command  = std::make_unique<ObjectCommand>(document.get(), document->objects.size(), image->GetFilename());
+		auto command  = std::make_unique<ObjectCommand>(document.get(), document->objects.size(), image->getFilename());
 		auto material = command->GetObject().get()->material.get();
-		material->unlit.is_empty = false;
+		material->ext.unlit.is_empty = false;
 		material->SetImage(image, &material->image_slots[(int)Material::Tex::BaseColor]);
 
 		document->addCommand(std::move(command));

@@ -55,13 +55,17 @@ public:
 	CountedSizedArray<glm::u16vec4> m_normalized;
 	CountedSizedArray<glm::u16vec4> m_normalizedPositions;
 
-	counted_string const& GetFilename() const { return m_filename; }
+	std::unique_ptr<uint8_t[]> LoadFileAsArray(uint32_t & size) const;
 
 	bool isLoaded() const { return m_isLoaded; }
 	bool hasAlpha() const { return m_hasAlpha; }
 
 	uint32_t GetTexture() const { return m_texture; };
 	glm::u16vec2 GetSize() const { return m_size; }
+
+	std::string getFilename() const;
+	std::string getDirectory() const;
+	std::string getMimeType() const;
 
 #if HAVE_CHROMA_KEY
 	void UpdateChromaKey(uint32_t color_mask, uint32_t color_key);
@@ -73,16 +77,13 @@ friend class counted_ptr<Image>;
 	void Release() { if(--m_refCount == 0) { Clear(); delete this; } }
 
 private:
-	Image(ImageManager * manager, counted_string const& path, counted_string directory, counted_string filename);
+	Image(ImageManager * manager, std::string const& path);
 	~Image();
 
 	static std::mutex                       g_mutex;
 
 	ImageManager                  * m_manager{nullptr};
-	counted_string                  m_path;
-	counted_string                  m_directory;
-	counted_string                  m_filename;
-	counted_string                  m_mimetype;
+	std::string		                m_path;
 
 	glm::i16vec2                    m_size{0, 0};
 	uint8_t                         m_channels{0};

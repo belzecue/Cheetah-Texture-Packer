@@ -57,6 +57,7 @@ SOURCES += src/main.cpp\
 	src/Sprite/spritesheet.cpp \
 	src/Support/counted_string.cpp \
 	src/Support/imagesupport.cpp \
+	src/Support/packaccessor.cpp \
 	src/Support/qt_to_gl.cpp \
 	src/commandlist.cpp \
 	src/imagemetadata.cpp \
@@ -111,6 +112,7 @@ HEADERS  += src/mainwindow.h \
 	src/Support/countedsizedarray.hpp \
 	src/Support/glm_iostream.hpp \
 	src/Support/imagesupport.h \
+	src/Support/packaccessor.h \
 	src/Support/qt_to_gl.h \
 	src/Support/vectoroperations.hpp \
 	src/commandinterface.hpp \

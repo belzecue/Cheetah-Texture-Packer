@@ -9,6 +9,7 @@
 #include "Support/counted_ptr.hpp"
 #include "image.h"
 #include "object.h"
+#include <QFileInfo>
 #include <chrono>
 #include <algorithm>
 #include <memory>
@@ -36,7 +37,9 @@ struct Document
 	PackerSettings        settings;
 
 	std::vector<counted_ptr<Object>>   objects;
-	MainWindow *          window{};
+	MainWindow *          m_window{};
+
+	QString Name() const { return m_title; };
 
 	void AddRef() const { ++m_refCount; }
 	void Release() { if(--m_refCount == 0) delete this; }
@@ -73,7 +76,14 @@ struct Document
 
 	GLViewWidget * GetViewWidget() const;
 
+	bool SaveFile(QFileInfo const& path);
+
+	QFileInfo m_path;
+	QString    m_title{"<untitled>"};
+
 private:
+	Sprites::Document PackDocument();
+
 typedef std::chrono::steady_clock::time_point time_point;
 	mutable std::atomic<int> m_refCount{1};
 

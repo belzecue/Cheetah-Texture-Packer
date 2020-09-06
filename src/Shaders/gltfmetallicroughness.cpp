@@ -64,7 +64,7 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 
 	bindTextures(gl, material);
 
-	bool use_specular = !material->pbrSpecularGlossiness.is_empty;
+	bool use_specular = !material->ext.pbrSpecularGlossiness.is_empty;
 
 	if(material->alphaMode == AlphaMode::Opaque)
 		_gl glUniform1f(u_alphaMode, 1.f);
@@ -77,10 +77,10 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 		material->normalTexture.texCoord,
 		material->occlusionTexture.texCoord,
 		use_specular?
-			material->pbrSpecularGlossiness.diffuseTexture.texCoord :
+			material->ext.pbrSpecularGlossiness.diffuseTexture.texCoord :
 			material->pbrMetallicRoughness.baseColorTexture.texCoord,
 		use_specular?
-			material->pbrSpecularGlossiness.specularGlossinessTexture.texCoord :
+			material->ext.pbrSpecularGlossiness.specularGlossinessTexture.texCoord :
 			material->pbrMetallicRoughness.metallicRoughnessTexture.texCoord);
 
 	_gl glUniform4f(u_NOMR,
@@ -88,17 +88,17 @@ typedef fx::gltf::Material::AlphaMode AlphaMode;
 		material->occlusionTexture.strength,
 		material->pbrMetallicRoughness.metallicFactor,
 		use_specular?
-			material->pbrSpecularGlossiness.glossinessFactor :
+			material->ext.pbrSpecularGlossiness.glossinessFactor :
 			material->pbrMetallicRoughness.roughnessFactor);
 
 	_gl glUniform4fv(u_baseColorFactor, 1, use_specular?
-		&material->pbrSpecularGlossiness.diffuseFactor[0] :
+		&material->ext.pbrSpecularGlossiness.diffuseFactor[0] :
 		&material->pbrMetallicRoughness.baseColorFactor[0]);
 
 	_gl glUniform4f(u_specularFactor,
-		material->pbrSpecularGlossiness.specularFactor[0],
-		material->pbrSpecularGlossiness.specularFactor[1],
-		material->pbrSpecularGlossiness.specularFactor[2],
+		material->ext.pbrSpecularGlossiness.specularFactor[0],
+		material->ext.pbrSpecularGlossiness.specularFactor[1],
+		material->ext.pbrSpecularGlossiness.specularFactor[2],
 		use_specular);
 
 	_gl glUniform3fv(u_emissionFactor, 1, &material->emissiveFactor[0]);

@@ -46,7 +46,7 @@ struct MaterialExtensions
 struct Material : fx::gltf::Material
 {
 public:
-	static int PackDocument(Material * mat, Sprites::Document & doc, PackMemo & mapping);
+	static int PackDocument(Material * mat, int32_t * images, Sprites::Document & doc, PackMemo & mapping);
 
 	Material();
 	~Material() = default;
