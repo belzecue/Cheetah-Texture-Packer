@@ -310,6 +310,8 @@ bool IO::CheckDynamics(std::string & error, float & size_ratio, CountedSizedArra
 #include "Support/qt_to_gl.h"
 #include <QImageReader>
 #include <QImageWriter>
+#include <QByteArray>
+#include <QBuffer>
 #include <QImage>
 #include <QString>
 #include <QDir>
@@ -328,6 +330,7 @@ void IO::DownloadImage(GLViewWidget * gl, QImage * image,  uint32_t texture)
 	_gl glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
 	uint8_t * ptr = (uint8_t*) malloc(width*height*4);
+	memset(ptr, 0, width*height*4);
 	_gl glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, ptr);
 
 	*image = QImage(ptr, width, height, 4*width, QImage::Format_ARGB32, &std::free, ptr);
@@ -336,6 +339,36 @@ void IO::DownloadImage(GLViewWidget * gl, QImage * image,  uint32_t texture)
 }
 
 
+void IO::ImageToPngData(GLViewWidget * gl, uint32_t id, std::unique_ptr<uint8_t[]> * array, uint32_t * size)
+{
+	QImage image;
+
+	DownloadImage(gl, &image, id);
+
+	ImageToPngData(&image, array, size);
+}
+
+void IO::ImageToPngData(QImage * image, std::unique_ptr<uint8_t[]> * array, uint32_t * size)
+{
+	if(image->isNull())
+	{
+		*size = 0;
+		return;
+	}
+
+	QBuffer device;
+	QImageWriter writer(&device, "png");
+	writer.write(*image);
+
+	auto & buffer = device.buffer();
+
+	*size = buffer.length();
+	if(size == 0)
+		return;
+
+	array->reset(new uint8_t[*size]);
+	memcpy(&(*array)[0], buffer.constData(), *size);
+}
 
 std::string IO::MimeType(const char * path)
 {

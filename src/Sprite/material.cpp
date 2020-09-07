@@ -155,21 +155,21 @@ void Material::CreateDefaultArrays(GLViewWidget* gl)
 	CreateIdBuffer(gl);
 
 	{
-		auto indices = CountedSizedArray<short>(m_spriteCount * 6);
+		m_indices = CountedSizedArray<uint16_t>(m_spriteCount * 6);
 
 		for(uint32_t i = 0; i < m_spriteCount; ++i)
 		{
-			indices[i*6+0] = i*4+0;
-			indices[i*6+1] = i*4+1;
-			indices[i*6+2] = i*4+3;
+			m_indices[i*6+0] = i*4+0;
+			m_indices[i*6+1] = i*4+1;
+			m_indices[i*6+2] = i*4+3;
 
-			indices[i*6+3] = i*4+3;
-			indices[i*6+4] = i*4+1;
-			indices[i*6+5] = i*4+2;
+			m_indices[i*6+3] = i*4+3;
+			m_indices[i*6+4] = i*4+1;
+			m_indices[i*6+5] = i*4+2;
 		}
 
 		_gl glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[v_indices]); DEBUG_GL
-		_gl glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), &indices[0], GL_DYNAMIC_DRAW); DEBUG_GL
+		_gl glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(m_indices[0]), &m_indices[0], GL_DYNAMIC_DRAW); DEBUG_GL
 	}
 
 //create null textures
@@ -436,14 +436,13 @@ void PackTexture(fx::gltf::Material::Texture * dst, Image * This, int texCoords,
 	texture.source = doc.images.size();
 	doc.textures.push_back(texture);
 
-
 	uint32_t file_size{};
 	auto buffer = This->LoadFileAsArray(file_size);
 
 	fx::gltf::Image   image;
 
 	image.name = This->getFilename();
-	image.bufferView = memo.PackBufferView(buffer.release(), file_size);
+	image.bufferView = memo.PackBufferView(buffer.release(), file_size, true);
 
 	auto r = doc.images.size();
 	doc.images.push_back(image);
@@ -452,7 +451,7 @@ void PackTexture(fx::gltf::Material::Texture * dst, Image * This, int texCoords,
 	dst->texCoord = texCoords;
 }
 
-int Material::PackDocument(Material * This, int32_t * images, Sprites::Document & doc, PackMemo & memo)
+int Material::PackDocument(Material * This, Sprites::Document & doc, PackMemo & memo)
 {
 	if(This == nullptr)
 		return -1;
@@ -483,4 +482,81 @@ int Material::PackDocument(Material * This, int32_t * images, Sprites::Document 
 	fx::gltf::detail::WriteField("extensions", mat.extensionsAndExtras, ext);
 
 	return material_id;
+}
+
+/* Texture coordinate packing needs to be updated for sheet packing... */
+void Material::PackFrames(Sprites::Sprite & sprite, Sprites::Document & , PackMemo & memo)
+{
+	assert(sprite.frames.size() == noFrames());
+	assert(m_indices.size());
+
+//step 1 copy data into frames
+	for(uint32_t i = 0; i < sprite.frames.size(); ++i)
+	{
+		sprite.frames[i].start = m_spriteIndices[i].start;
+		sprite.frames[i].count = m_spriteIndices[i].length;
+	}
+
+	for(uint32_t i = 0; i < sprite.frames.size(); ++i)
+	{
+		memcpy(&sprite.frames[i].AABB[0], &m_sprites[0][0], sizeof(glm::i16vec4));
+	}
+
+//add indices
+	sprite.indices = memo.PackIndices(&m_indices[0], m_indices.size(), false);
+
+	uint32_t noVerts    = m_spriteVertices.back().end();
+
+	std::unique_ptr<glm::i16vec3[]>  positions(new glm::i16vec3[noVerts]);
+	std::unique_ptr<glm::u16vec2[]>  texCoord0(new glm::u16vec2[noVerts]);
+
+	assert(m_normalizedPositions.size() == noVerts);
+
+
+#if 0
+#if 1
+		glm::vec2 center = SpriteSheet::GetCenter(m_sprites[i]);
+		glm::vec4 sprite = glm::vec4(m_sprites[i]) - glm::vec4(center, center);
+		glm::vec4 crop   = glm::vec4(m_crop   [i]) - glm::vec4(center, center);
+		glm::vec4 result = crop / glm::abs(sprite);
+
+		m_normalizedPositions[i*4+0] = glm::vec2(result.x, result.y);
+		m_normalizedPositions[i*4+1] = glm::vec2(result.z, result.y);
+		m_normalizedPositions[i*4+2] = glm::vec2(result.z, result.w);
+		m_normalizedPositions[i*4+3] = glm::vec2(result.x, result.w);
+#else
+		m_normalizedPositions[i*4+0] = glm::vec2(-1.f,  1.f);
+		m_normalizedPositions[i*4+1] = glm::vec2( 1.f,  1.f);
+		m_normalizedPositions[i*4+2] = glm::vec2( 1.f, -1.f);
+		m_normalizedPositions[i*4+3] = glm::vec2(-1.f, -1.f);
+#endif
+#endif
+
+//so all i need is the size multiplied by the normalized position.
+	for(uint32_t i = 0; i < m_spriteVertices.size(); ++i)
+	{
+		auto size   = glm::vec2(m_sprites[i].z - m_sprites[i].x, m_sprites[i].w - m_sprites[i].y) * .5f;
+		auto norm	= m_normalizedSprites[i];
+		auto pair	= m_spriteVertices[i];
+
+		for(uint32_t j = pair.start; j < pair.end(); ++j)
+		{
+			positions[j] = glm::i16vec3(m_normalizedPositions[j] * size, 0);
+
+			glm::vec2 UV = (m_normalizedPositions[j] + 1.f) * .5f;
+			texCoord0[i] = glm::mix(glm::vec2(norm.x, norm.y), glm::vec2(norm.z, norm.w), UV);
+		}
+	}
+
+	std::unique_ptr<uint32_t[]> array(new uint32_t[3]);
+
+	array[0] = memo.PackAccessor(positions.release(), noVerts, false, true);
+	array[1] = memo.PackAccessor(texCoord0.get(), noVerts, false, false);
+	array[2] = memo.PackAccessor(texCoord0.release(), noVerts, false, true);
+
+	sprite.attributes.emplace("POSITION",   array[0]);
+	sprite.attributes.emplace("TEXCOORD_0", array[1]);
+	sprite.attributes.emplace("TEXCOORD_1", array[2]);
+
+	memo.InterlaceBuffers(std::move(array), 3);
 }

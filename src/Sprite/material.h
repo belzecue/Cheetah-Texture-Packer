@@ -13,6 +13,7 @@ struct PackMemo;
 namespace Sprites
 {
 struct Document;
+struct Sprite;
 };
 
 struct RenderData
@@ -77,6 +78,7 @@ public:
 		VBOc
 	};
 
+
 	MaterialExtensions ext;
 
 	counted_ptr<Image>                    image_slots[(int)Tex::Total];
@@ -116,8 +118,13 @@ public:
 		return x;
 	}
 
-private:
+	void PackFrames(Sprites::Sprite & sprite, Sprites::Document & doc, PackMemo & mapping);
+
+	uint32_t noFrames() const  { return m_spriteCount; }
+
 	void Prepare(GLViewWidget*);
+private:
+
 	void CreateDefaultArrays(GLViewWidget* gl);
 
 	void CreateIdBuffer(GLViewWidget* gl);
@@ -141,6 +148,9 @@ private:
 	CountedSizedArray<glm::u16vec4> m_normalizedSprites{};
 
 	CountedSizedArray<glm::vec2>    m_normalizedPositions{};
+	CountedSizedArray<uint16_t>		m_indices{};
+	CountedSizedArray<bool>			m_rotated{};
+
 	CountedSizedArray<Pair>         m_spriteIndices{};
 	CountedSizedArray<Pair>         m_spriteVertices{};
 

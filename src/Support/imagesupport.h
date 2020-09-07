@@ -46,6 +46,7 @@ namespace IO
 		uint32_t                   bytes{};
 	};
 
+	std::string MimeType(const char * path);
 	IO::Image LoadImage(const char * path);
 //	void SaveImage(const char * path, uint8_t * data, glm::i16vec2 size, int channels);
 
@@ -56,6 +57,9 @@ namespace IO
 #else
 	void DownloadImage(GLViewWidget *, QImage *,  uint32_t);
 #endif
+
+	void ImageToPngData(GLViewWidget * gl, uint32_t id, std::unique_ptr<uint8_t[]> * array, uint32_t * size);
+	void ImageToPngData(QImage * image, std::unique_ptr<uint8_t[]> * array, uint32_t * size);
 
 	glm::i16vec4 GetSprite(uint8_t * data, glm::i16vec2 size, int channels, glm::i16vec2 tl, uint32_t color);
 	glm::i16vec4 GetCrop  (const uint8_t * data, glm::i16vec2 size, int channels, glm::i16vec4 aabb, uint32_t greenMask, uint32_t greenScreen);

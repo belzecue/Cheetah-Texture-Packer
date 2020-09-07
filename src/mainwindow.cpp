@@ -199,11 +199,13 @@ bool MainWindow::SetAsterisk(bool value)
 
 bool MainWindow::fileSaveAs()
 {
+	GLViewWidget::TimerState pause_timer(ui->viewWidget);
+
 	static QDir g_filePath = QDir::home();
 
-	QFileDialog dialog(this, tr("Save Background File"));
+	QFileDialog dialog(this, tr("Save Sprite File"));
 	dialog.setAcceptMode(QFileDialog::AcceptSave);
-	dialog.setNameFilter("Room System (*.lf_mta)");
+	dialog.setNameFilter("Sprite File (*.lf_spr)");
 	dialog.setDirectory(g_filePath);
 
 	bool accepted;
@@ -367,6 +369,12 @@ std::string MainWindow::GetImage()
 	dialog.setDirectory("/mnt/Passport/Programs/Cheetah-Texture-Packer/Cheeta-Texture-Packer/test-images");
 #endif
 
+	if(dialog.exec() == QDialog::Accepted)
+	{
+		return dialog.selectedFiles().first().toStdString();
+	}
+
+#if 0
     while(dialog.exec() == QDialog::Accepted)
 	{
 		QImageReader reader(dialog.selectedFiles().first());
@@ -401,6 +409,7 @@ std::string MainWindow::GetImage()
 			return save_path.path().toStdString();
 		}
 	}
+#endif
 
 	return std::string();
 }

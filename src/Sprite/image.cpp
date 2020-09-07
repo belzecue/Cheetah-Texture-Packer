@@ -67,6 +67,21 @@ Image::~Image()
 	UnlitShader::Shader.Release(m_manager->gl);
 }
 
+std::unique_ptr<uint8_t[]> Image::LoadFileAsArray(uint32_t & size) const
+{
+	assert(m_texture != 0);
+
+	auto gl = m_manager->gl;
+	gl->makeCurrent();
+
+	std::unique_ptr<uint8_t[]> r;
+	IO::ImageToPngData(gl, m_texture, &r, &size);
+
+	gl->doneCurrent();
+
+	return r;
+}
+
 /*
  * This is wrong; copy memory from GL
  * set Qwriter device to QBuffer

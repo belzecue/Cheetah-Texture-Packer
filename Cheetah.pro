@@ -31,6 +31,8 @@ DEFINES += QT_DEPRECATED_WARNINGS GLM_EXT_INCLUDED \"_gl=gl->\"
 
 SOURCES += src/main.cpp\
 	../../../Libraries/fx-gltf/src/bufferinfo.cpp \
+	../../../Libraries/fx-gltf/src/fx/extensions/khr_materials.cpp \
+	../../../Libraries/fx-gltf/src/fx/extensions/msft_texture_dds.cpp \
 	../../../Libraries/fx-gltf/src/fx/gltf.cpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.cpp \
 	src/Import/import_c16.cpp \
@@ -82,6 +84,7 @@ HEADERS  += src/mainwindow.h \
 	../../../Libraries/fx-gltf/src/bufferinfo.h \
 	../../../Libraries/fx-gltf/src/componenttypeinfo.hpp \
 	../../../Libraries/fx-gltf/src/fx/extensions/khr_materials.h \
+	../../../Libraries/fx-gltf/src/fx/extensions/msft_texture_dds.h \
 	../../../Libraries/fx-gltf/src/fx/gltf.h \
 	../../../Libraries/fx-gltf/src/fx/gltf_forward.hpp \
 	../../../Libraries/fx-gltf/src/gltf_stl_accessor.h \

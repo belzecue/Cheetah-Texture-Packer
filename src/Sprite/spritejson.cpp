@@ -6,12 +6,12 @@
 #define ReadOptionalField fx::gltf::detail::ReadOptionalField
 #define WriteField        fx::gltf::detail::WriteField
 
-static constexpr std::array<uint16_t, 4> IdentityAABB{0, 0, USHRT_MAX, USHRT_MAX};
 
 namespace fx {
 namespace gltf {
 void from_json(nlohmann::json const & json, Asset & db);
 void from_json(nlohmann::json const & json, Buffer & db);
+void from_json(nlohmann::json const & json, Accessor & db);
 void from_json(nlohmann::json const & json, BufferView & db);
 void from_json(nlohmann::json const & json, Image & db);
 void from_json(nlohmann::json const & json, Texture & db);
@@ -20,6 +20,7 @@ void from_json(nlohmann::json const & json, Material & db);
 
 void to_json(nlohmann::json & json, Asset const& db);
 void to_json(nlohmann::json & json, Buffer const& db);
+void to_json(nlohmann::json & json, Accessor const& db);
 void to_json(nlohmann::json & json, BufferView const& db);
 void to_json(nlohmann::json & json, Image const& db);
 void to_json(nlohmann::json & json, Texture const& db);
@@ -104,11 +105,11 @@ inline void from_json(nlohmann::json const & json, Sprite & db)
 	detail::ReadExtensionsAndExtras(json, db.extensionsAndExtras);
 }
 
-inline void to_json(nlohmann::json & json, Sprite const& db)
+void to_json(nlohmann::json & json, Sprite const& db)
 {
 	WriteField("name",         json, db.name);
-	WriteField("indicies",     json, db.indices);
-	WriteField("material",     json, db.material);
+	WriteField("indicies",     json, db.indices, -1);
+	WriteField("material",     json, db.material, -1);
 
 	WriteField("attributes",   json, db.attributes);
 
@@ -120,7 +121,7 @@ inline void to_json(nlohmann::json & json, Sprite const& db)
 	detail::WriteExtensions(json, db.extensionsAndExtras);
 }
 
-inline void from_json(nlohmann::json const & json, Document & db)
+void from_json(nlohmann::json const & json, Document & db)
 {
 	ReadRequiredField("asset",          json, db.asset);
 	ReadRequiredField("sprites",        json, db.sprites);
@@ -140,7 +141,7 @@ inline void from_json(nlohmann::json const & json, Document & db)
 	detail::ReadExtensionsAndExtras(json, db.extensionsAndExtras);
 }
 
-inline void to_json(nlohmann::json & json, Document const& db)
+void to_json(nlohmann::json & json, Document const& db)
 {
 	WriteField("asset",          json, db.asset);
 	WriteField("sprites",        json, db.sprites);

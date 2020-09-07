@@ -11,9 +11,7 @@
 
 #include "widgets/glviewwidget.h"
 
-static bool CheckDynamics(std::string & error, float & size_ratio, CountedSizedArray<glm::i16vec4> A, CountedSizedArray<glm::i16vec4> B);
-
-void Object::RenderAttachments(GLViewWidget *, int attachment)
+void Object::RenderAttachments(GLViewWidget *, int )
 {
 
 
@@ -87,10 +85,16 @@ Object::Object(GLViewWidget * gl, Sprites::Sprite const& spr, Sprites::Document 
 
 int Object::PackDocument(Sprites::Document & doc, PackMemo & memo)
 {
+	material->Prepare(gl);
+
 	Sprites::Sprite sprite;
 
 	sprite.name = name.toStdString();
 	sprite.material = Material::PackDocument(material.get(), doc, memo);
+
+	sprite.frames.resize(noFrames());
+	material->PackFrames(sprite, doc, memo);
+
 
 //pack attachments
 	sprite.attachments.resize(attachments.size());

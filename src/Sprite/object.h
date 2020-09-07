@@ -47,6 +47,7 @@ struct Object
 	inline auto RenderSpriteSheet(GLViewWidget * gl, Material::Tex image_slot, int frame = -1) { return material->RenderSpriteSheet(gl, image_slot, frame);  }
 
 	int PackDocument(Sprites::Document & doc, PackMemo & mapping);
+	inline uint32_t noFrames() const  { return material->noFrames(); }
 
 private:
 	mutable std::atomic<int> m_refCount{1};

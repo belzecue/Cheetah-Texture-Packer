@@ -1,5 +1,6 @@
 #ifndef SPRITEJSON_H
 #define SPRITEJSON_H
+//#include <fx/extensions/msft_texture_dds.cpp>
 #include <fx/gltf.h>
 
 namespace Sprites
@@ -16,6 +17,7 @@ typedef fx::gltf::Material    Material;
 typedef fx::gltf::ReadQuotas  ReadQuotas;
 typedef fx::gltf::DataContext DataContext;
 typedef fx::gltf::Asset       Asset;
+
 
 typedef fx::gltf::invalid_gltf_document invalid_document;
 
@@ -66,6 +68,7 @@ struct Sprite : NeverEmpty
 		int32_t                           start;
 		int32_t                           count;
 
+//original position on the sprite sheet
 		std::array<uint16_t, 4>           AABB;
 	};
 

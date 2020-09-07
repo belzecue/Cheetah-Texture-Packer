@@ -433,7 +433,7 @@ QVariant SpriteModel::data(const QModelIndex &index, int role) const
 			if(ptr.empty())
 				return "";
 
-			return ptr->getFilename().c_str();
+			return QString::fromStdString(ptr->getFilename());
 		}
 		default:
 			break;
@@ -536,12 +536,26 @@ bool SpriteModel::setData(QModelIndex const& index,  QVariant const& variant, in
 		{
 			anim = *obj->animations[entity.numeric];
 
+			std::vector<uint16_t> vec;
+
 			if(entity.subId < 0)
 				anim.name = counted_string::MakeUnique(value.toStdString());
 			else if(entity.subId == 0)
 			{
 				if(!VectorFromString(anim.frames, value))
 					return false;
+
+				auto N = doc->objects[entity.object]->noFrames();
+
+				for(uint32_t i = 0; i < anim.frames.size(); ++i)
+				{
+					if(i > N)
+					{
+						QMessageBox::warning(window, "Cheetah Animation", "frame id greater than total frames in sprite sheet");
+						return false;
+					}
+				}
+
 			}
 			else
 			{
