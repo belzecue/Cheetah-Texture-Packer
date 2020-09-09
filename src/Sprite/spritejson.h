@@ -70,16 +70,16 @@ struct Sprite : NeverEmpty
 
 //original position on the sprite sheet
 		std::array<uint16_t, 4>           AABB;
+		std::array<uint16_t, 4>           crop;
+		std::array<uint16_t, 4>           texCoord0;
+		std::array<uint16_t, 4>           texCoord1;
 	};
 
 	std::string              name;
 
-	int32_t                  indices{-1};
 	int32_t                  material{-1};
 //original images
 	std::vector<int32_t>     images;
-
-	fx::gltf::Attributes     attributes;
 
 	std::vector<Frame>       frames;
 	std::vector<std::string> attachments;
