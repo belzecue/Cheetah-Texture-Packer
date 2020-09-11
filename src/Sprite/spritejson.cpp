@@ -5,7 +5,7 @@
 #define ReadRequiredField fx::gltf::detail::ReadRequiredField
 #define ReadOptionalField fx::gltf::detail::ReadOptionalField
 #define WriteField        fx::gltf::detail::WriteField
-
+#define WriteRequiredField fx::gltf::detail::WriteRequiredField
 
 namespace fx {
 namespace gltf {
@@ -76,30 +76,29 @@ inline void to_json(nlohmann::json & json, Animation const& db)
 inline void from_json(nlohmann::json const & json, Sprite::Frame & db)
 {
 	ReadOptionalField("attachments", json, db.attachments);
-	ReadRequiredField("start",       json, db.start);
-	ReadRequiredField("count",       json, db.count);
 	ReadRequiredField("AABB",        json, db.AABB);
+	ReadRequiredField("crop",        json, db.crop);
+	ReadRequiredField("texCoord0",   json, db.texCoord0);
+	ReadRequiredField("texCoord1",   json, db.texCoord1);
 }
 
 inline void to_json(nlohmann::json & json, Sprite::Frame const& db)
 {
 	WriteField("attachments", json, db.attachments);
-	WriteField("start",       json, db.start, -1);
-	WriteField("count",       json, db.count, -1);
-	WriteField("AABB",        json, db.AABB, {0, 0, 0, 0});
+	WriteRequiredField("AABB",        json, db.AABB);
+	WriteRequiredField("crop",        json, db.crop);
+	WriteRequiredField("texCoord0",   json, db.texCoord0);
+	WriteRequiredField("texCoord1",   json, db.texCoord1);
 }
 
 inline void from_json(nlohmann::json const & json, Sprite & db)
 {
 	ReadRequiredField("name",         json, db.name);
-	ReadRequiredField("indicies",     json, db.indices);
 	ReadRequiredField("material",     json, db.material);
-
-	ReadRequiredField("attributes",   json, db.attributes);
 
 	ReadRequiredField("frames",       json, db.frames);
 
-	ReadRequiredField("attachments",  json, db.attachments);
+	ReadOptionalField("attachments",  json, db.attachments);
 	ReadOptionalField("animations",   json, db.animations);
 
 	detail::ReadExtensionsAndExtras(json, db.extensionsAndExtras);
@@ -108,10 +107,7 @@ inline void from_json(nlohmann::json const & json, Sprite & db)
 void to_json(nlohmann::json & json, Sprite const& db)
 {
 	WriteField("name",         json, db.name);
-	WriteField("indicies",     json, db.indices, -1);
 	WriteField("material",     json, db.material, -1);
-
-	WriteField("attributes",   json, db.attributes);
 
 	WriteField("frames",       json, db.frames);
 
@@ -124,13 +120,13 @@ void to_json(nlohmann::json & json, Sprite const& db)
 void from_json(nlohmann::json const & json, Document & db)
 {
 	ReadRequiredField("asset",          json, db.asset);
-	ReadRequiredField("sprites",        json, db.sprites);
+	ReadOptionalField("sprites",        json, db.sprites);
 
-	ReadRequiredField("accessors",      json, db.accessors);
-	ReadRequiredField("buffers",        json, db.buffers);
-	ReadRequiredField("bufferViews",    json, db.bufferViews);
+	ReadOptionalField("accessors",      json, db.accessors);
+	ReadOptionalField("buffers",        json, db.buffers);
+	ReadOptionalField("bufferViews",    json, db.bufferViews);
 
-	ReadRequiredField("materials",      json, db.materials);
+	ReadOptionalField("materials",      json, db.materials);
 	ReadOptionalField("textures",       json, db.textures);
 	ReadOptionalField("images",         json, db.images);
 	ReadOptionalField("samplers",       json, db.samplers);

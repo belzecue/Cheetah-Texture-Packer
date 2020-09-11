@@ -65,8 +65,6 @@ struct Sprite : NeverEmpty
 	struct Frame : NeverEmpty
 	{
 		std::vector<std::array<short, 2>> attachments;
-		int32_t                           start;
-		int32_t                           count;
 
 //original position on the sprite sheet
 		std::array<uint16_t, 4>           AABB;
@@ -78,8 +76,6 @@ struct Sprite : NeverEmpty
 	std::string              name;
 
 	int32_t                  material{-1};
-//original images
-	std::vector<int32_t>     images;
 
 	std::vector<Frame>       frames;
 	std::vector<std::string> attachments;
@@ -88,20 +84,12 @@ struct Sprite : NeverEmpty
 	nlohmann::json extensionsAndExtras{};
 };
 
-struct Document
+struct Document : public fx::gltf::DocumentBase
 {
 	Asset                   asset;
 
 	std::vector<Sprite>     sprites{};
-
-	std::vector<Accessor>   accessors{};
-	std::vector<BufferView> bufferViews{};
-	std::vector<Buffer>     buffers{};
-
 	std::vector<Material>   materials{};
-	std::vector<Texture>    textures{};
-	std::vector<Image>      images{};
-	std::vector<Sampler>    samplers{};
 
 	std::vector<std::string> extensionsUsed{};
 	std::vector<std::string> extensionsRequired{};
