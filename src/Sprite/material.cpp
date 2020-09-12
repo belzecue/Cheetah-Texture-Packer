@@ -493,10 +493,10 @@ void Material::PackFrames(Sprites::Sprite & sprite, Sprites::Document & , PackMe
 //step 1 copy data into frames
 	for(uint32_t i = 0; i < sprite.frames.size(); ++i)
 	{
-		memcpy(&sprite.frames[i].AABB[0], &m_sprites[0][0], sizeof(glm::i16vec4));
-		memcpy(&sprite.frames[i].crop[0], &m_crop[0][0], sizeof(glm::i16vec4));
-		memcpy(&sprite.frames[i].texCoord0[0], &m_normalizedCrop[0][0], sizeof(glm::i16vec4));
-		memcpy(&sprite.frames[i].texCoord1[0], &m_normalizedCrop[0][0], sizeof(glm::i16vec4));
+		memcpy(&sprite.frames[i].AABB[0], &m_sprites[i][0], sizeof(glm::i16vec4));
+		memcpy(&sprite.frames[i].crop[0], &m_crop[i][0], sizeof(glm::i16vec4));
+		memcpy(&sprite.frames[i].texCoord0[0], &m_normalizedCrop[i][0], sizeof(glm::i16vec4));
+		memcpy(&sprite.frames[i].texCoord1[0], &m_normalizedCrop[i][0], sizeof(glm::i16vec4));
 	}
 
 
