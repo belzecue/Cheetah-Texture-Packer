@@ -28,6 +28,8 @@ struct Document;
 
 struct Document
 {
+	static std::unique_ptr<Document> OpenFile(GLViewWidget*gl, QFileInfo const& path);
+
 	Document(GLViewWidget * gl, Sprites::Document const&);
 	Document(GLViewWidget*gl) : imageManager(gl) {}
 

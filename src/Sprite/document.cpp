@@ -69,11 +69,33 @@ Sprites::Document Document::PackDocument()
 	return r;
 }
 
+std::unique_ptr<Document> Document::OpenFile(GLViewWidget * gl, QFileInfo const& path)
+{
+	std::unique_ptr<Document> r;
+
+	try
+	{
+		r.reset(new Document(gl, Sprites::LoadFromBinary(path.filePath().toStdString(), false)));
+	}
+	catch(std::exception & e)
+	{
+		QMessageBox::critical(gl->w, "Error OpeningFile File", e.what());
+		return nullptr;
+	}
+
+	if(r)
+	{
+		r->m_path  = path;
+		r->m_title = path.fileName();
+	}
+
+	return r;
+}
+
 bool Document::SaveFile(QFileInfo const& Path)
 {
 	try
 	{
-
 		Sprites::Save(PackDocument(), Path.filePath().toStdString(), true);
 	}
 	catch(std::exception & e)

@@ -65,7 +65,7 @@ protected:
 //	void dragEnterEvent(QDragEnterEvent *event);
 
 public:
-	void addTiles();
+	bool fileOpen();
 	void deleteSelectedTiles();
 	void packerUpdate();
 	void updateAuto();

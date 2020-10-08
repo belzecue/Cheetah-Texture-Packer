@@ -109,7 +109,7 @@ MainWindow::MainWindow(QWidget *parent) :
 		window->show();
 	});
 
-	connect(ui->fileOpen, &QAction::triggered, this, &MainWindow::addTiles);
+	connect(ui->fileOpen, &QAction::triggered, this, &MainWindow::fileOpen);
 	connect(ui->fileSave, &QAction::triggered, this, &MainWindow::fileSave);
 	connect(ui->fileSaveAs, &QAction::triggered, this, &MainWindow::fileSaveAs);
 	connect(ui->m_about, &QAction::triggered, [this]() {
@@ -197,24 +197,28 @@ bool MainWindow::SetAsterisk(bool value)
 	return true;
 }
 
-bool MainWindow::fileSaveAs()
+static QDir g_sprFilePath = QDir::home();
+
+bool MainWindow::fileOpen()
 {
 	GLViewWidget::TimerState pause_timer(ui->viewWidget);
 
-	static QDir g_filePath = QDir::home();
-
 	QFileDialog dialog(this, tr("Save Sprite File"));
-	dialog.setAcceptMode(QFileDialog::AcceptSave);
+	dialog.setAcceptMode(QFileDialog::AcceptOpen);
 	dialog.setNameFilter("Sprite File (*.lf_spr)");
-	dialog.setDirectory(g_filePath);
+	dialog.setDirectory(g_sprFilePath);
+
+	std::unique_ptr<Document> doc;
 
 	bool accepted;
-	while ((accepted = (dialog.exec() == QDialog::Accepted)) && !document->SaveFile(dialog.selectedFiles().first())) {}
+	while ((accepted = (dialog.exec() == QDialog::Accepted)) && nullptr == (doc = Document::OpenFile(ui->viewWidget, dialog.selectedFiles().first()))) {}
 
 	if(!accepted)
 		return false;
 
-	g_filePath = dialog.directory();
+	g_sprFilePath = dialog.directory();
+	document = std::move(doc);
+	SetAsterisk(false);
 
 	return true;
 }
@@ -225,9 +229,28 @@ bool MainWindow::fileSave()
 		return fileSaveAs();
 
 	return document->SaveFile(document->m_path);
-
-    exportImage();
 }
+
+bool MainWindow::fileSaveAs()
+{
+	GLViewWidget::TimerState pause_timer(ui->viewWidget);
+
+	QFileDialog dialog(this, tr("Save Sprite File"));
+	dialog.setAcceptMode(QFileDialog::AcceptSave);
+	dialog.setNameFilter("Sprite File (*.lf_spr)");
+	dialog.setDirectory(g_sprFilePath);
+
+	bool accepted;
+	while ((accepted = (dialog.exec() == QDialog::Accepted)) && !document->SaveFile(dialog.selectedFiles().first())) {}
+
+	if(!accepted)
+		return false;
+
+	g_sprFilePath = dialog.directory();
+
+	return true;
+}
+
 
 void MainWindow::addDir(QString dir)
 {
@@ -253,16 +276,6 @@ void MainWindow::addDir(QString dir)
 	outFile = info.baseName();
 }
 
-void MainWindow::addTiles()
-{
-    QString dir = QFileDialog::getExistingDirectory(this,
-                  tr("Select tile directory"), topImageDir);
-    if(dir.length() > 0)
-    {
-        addDir(dir);
-        packerUpdate();
-    }
-}
 
 void MainWindow::OnDocumentChanged()
 {
