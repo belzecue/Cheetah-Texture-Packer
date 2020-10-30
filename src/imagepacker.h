@@ -1,96 +1,134 @@
 #ifndef IMAGEPACKER_H
 #define IMAGEPACKER_H
+#include "imagemetadata.h"
+#include "preferences.h"
+#include <vector>
 
-#include <QObject>
-#include <QImage>
+/*
 
 class MaxRects;
+class QTextStream;
+class QListWidgetItem;
+
+struct packerData
+{
+	packerData() : listItem(0L) {}
+	QListWidgetItem *listItem;
+	QString path;
+	QString file;
+};
 
 struct packedImage
 {
     QImage img;
-    QRect rc;
+//is this image itself part of an atlas?
+    QRect originalSection;
     QRect crop;
     bool border, rotate;
     int textureId;
     int id;
 };
 
+struct ExtrudeData
+{
+    uint8_t t, b, l, r;
+    QPoint pos() const { return QPoint(t, l); }
+    int width()  const { return l+r; }
+    int height() const { return t+b; }
+};
+
 struct inputImage
 {
     quint32 hash;
     int textureId;
-    void *id;
-    void *duplicateId;
+    packerData *id;
+    inputImage *duplicateId;
     QPoint pos;
-    QSize size, sizeCurrent;
+    QSize originalSize, sizeCurrent;
     QRect crop;
     QString path;
+
+    QSize getSize(bool doCrop) const
+    {
+        return doCrop? crop.size() : originalSize;
+
+    }
+
+    QRect getCrop(bool doCrop) const
+    {
+       return doCrop? crop : QRect(0, 0, originalSize.width(), originalSize.height());
+    //   return rotated? QRect(size.height() - r.y() - r.height(),  r.x(), r.height(), r.width()) : r;
+    }
+
+    QRect getOutline(bool doCrop)
+    {
+       QRect r = QRect(QPoint(0, 0), getSize(doCrop));
+       r = rotated? QRect(r.y() - r.height(),  r.x(), r.height(), r.width()) : r;
+	   return QRect(pos + r.topLeft(), r.size());
+    }
+
+    QImage getImage()
+    {
+        return id? QImage(id->path) : QImage();
+    }
 
     bool cropped, rotated;
 };
 
-struct border_t
+class ImagePacker
 {
-    int t, b, l, r;
-};
-
-class ImagePacker : public QObject
-{
-    private:
-        int prevSortOrder;
-        void internalPack(int heur, int w, int h);
-
-        void SortImages(int w, int h);
-
-    public:
-        QList<inputImage> images;
-        QList<QSize> bins;
+public:
         ImagePacker();
+
+		void drawImage(QPainter & p, QImage & img, const QRect & crop);
+		void WriteAtlasFile(int j, QTextStream & out, const QString & imgFile) const;
+        void CreateOutputTextures(QList<QImage> & textures, bool preview, bool exporting, QPixmap * pattern);
+		void DrawOutlines(QList<QImage> & textures);
+
         bool compareImages(QImage *img1, QImage *img2, int *i, int *j);
-        void pack(int heur, int w, int h);
+        void pack(Preferences::Heuristic heur, int w, int h);
 
-        unsigned AddImgesToBins(int heur, int w, int h);
+        unsigned AddImgesToBins(Preferences::Heuristic heur, int w, int h);
 
-        void CropLastImage(int heur, int w, int h, bool wh);
-        void DivideLastImage(int heur, int w, int h, bool wh);
+        void CropLastImage(Preferences::Heuristic heur, int w, int h, bool wh);
+        void DivideLastImage(Preferences::Heuristic heur, int w, int h, bool wh);
 
         void UpdateCrop();
+		void applyGreenScreen(QImage & image);
 
         float GetFillRate();
 
         void ClearBin(int binIndex);
 
-        int FillBin(int heur, int w, int h, int binIndex);
+        int FillBin(Preferences::Heuristic heur, int w, int h, int binIndex);
 
         QRect crop(const QImage &img);
-        void sort();
-        void addItem(const QImage &img, void *data, QString path);
-        void addItem(QString path, void *data);
+        ExtrudeData getExtrude(const QRect & crop);
+
+        void addItem(const QImage &img, packerData *data, QString path);
+        void addItem(QString path, packerData * data);
         const inputImage *find(void *data);
         void removeId(void *);
         void realculateDuplicates();
         void clear();
+
+		std::vector<ImageMetadata> images;
+		std::vector<glm::i16vec2> bins;
+
         int compare;
         quint64 area, neededArea;
         int missingImages;
         int mergedImages;
-        bool ltr, merge, square, autosize, mergeBF;
-        int cropThreshold;
-        border_t border;
-        int extrude;
-        int rotate;
-        int sortOrder;
-        int minFillRate;
-        int minTextureSizeX;
-        int minTextureSizeY;
-        enum {GUILLOTINE, MAXRECTS}; //method
-        enum {NONE, TL, BAF, BSSF, BLSF, MINW, MINH, HEURISTIC_NUM}; //heuristic
-        enum {SORT_NONE, WIDTH, HEIGHT, SORT_AREA, SORT_MAX, SORT_NUM}; //sort
-        enum {NEVER, ONLY_WHEN_NEEDED, H2_WIDTH_H, WIDTH_GREATHER_HEIGHT, WIDTH_GREATHER_2HEIGHT, W2_HEIGHT_W, HEIGHT_GREATHER_WIDTH, HEIGHT_GREATHER_2WIDTH, ROTATION_NUM}; //rotation
+
+
+private:
+	void internalPack(int heur, int w, int h);
+
+	void SortImages(int w, int h);
+
 };
 
 
-
+*/
 
 #endif // IMAGEPACKER_H

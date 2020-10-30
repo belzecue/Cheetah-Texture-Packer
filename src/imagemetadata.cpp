@@ -1,0 +1,1 @@
+#include "imagemetadata.h"

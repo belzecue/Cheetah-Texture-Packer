@@ -1,99 +1,164 @@
 #include "imagepacker.h"
-#include <QHash>
-#define CMPF1(x,y,a) qAlpha(img.pixel(x,y)) > a
-#define CMP(x,y,a) if(CMPF1(x,y,a)) {t = false; break;} if(!t) break;
-#define CMPF2(x,y) img.pixel(x,y) != pix
-#define CMP2(x,y) if(CMPF2(x,y)) {t = false; break;} if(!t) break;
+#include "packersettings.h"
+#include <QImage>
 
+#define CMPF1(x,y,a) (qAlpha(img.pixel(x,y)) <= a)
+#define CMPF3(x,y,a) (img.pixel(x,y) == a)
+
+/*
+#define CMPF1(x,y,a) (qAlpha(img.pixel(x,y)) > a)
+*/
+
+#ifdef _WIN32
+#undef min
+#undef max
+#endif
+
+//should be cached; is in the inputimage.cpp variation.
+static bool doesImageHaveAlpha(const QImage & image);
+#if 0
 //auto-cropping algorithm
-QRect ImagePacker::crop(const QImage &img)
+QRect crop(const QImage &img)
 {
     int j, w, h, x, y;
-    QRgb pix;
     //QImage im;
     bool t;
-    //crop all
-    if(false)
-    {
-        //    qDebug("%d", img->depth());
-        QHash<QRgb, int> hash;
-        hash[img.pixel(0, 0)]++;
-        hash[img.pixel(img.width() - 1, 0)]++;
-        hash[img.pixel(img.width() - 1, img.height() - 1)]++;
-        hash[img.pixel(0, img.height() - 1)]++;
-        QHashIterator<QRgb, int> i(hash);
-        while(i.hasNext())
-        {
-            i.next();
-            //        qDebug("%d %d %d %d - %d", qRed(i.key()), qGreen(i.key()), qBlue(i.key()), qAlpha(i.key()), i.value());
-            if(i.value() > 2)
-            {
-                pix = i.key();
-                //            qDebug("%d %d %d %d - %d", qRed(i.key()), qGreen(i.key()), qBlue(i.key()), qAlpha(i.key()), i.value());
-                //~ if(qAlpha(pix) == 0) break;
-                t = true;
-                for(y = 0; y < img.height(); y++)
-                {
-                    for(j = 0; j < img.width(); j++)
-                        CMP2(j, y)
-                    }
-                t = true;
-                for(x = 0; x < img.width(); x++)
-                {
-                    for(j = y; j < img.height(); j++)
-                        CMP2(x, j)
-                    }
-                t = true;
-                for(w = img.width(); w > 0; w--)
-                {
-                    for(j = y; j < img.height(); j++)
-                        CMP2(w - 1, j)
-                    }
-                t = true;
-                for(h = img.height(); h > 0; h--)
-                {
-                    for(j = x; j < w; j++)
-                        CMP2(j, h - 1)
-                    }
-                goto found_by_color;
-            }
-        }
-    }
-    //crop only alpha
-    t = true;
-    for(y = 0; y < img.height(); y++)
-    {
-        for(j = 0; j < img.width(); j++)
-            CMP(j, y, cropThreshold)
-        }
-    t = true;
-    for(x = 0; x < img.width(); x++)
-    {
-        for(j = y; j < img.height(); j++)
-            CMP(x, j, cropThreshold)
-        }
-    t = true;
-    for(w = img.width(); w > 0; w--)
-    {
-        for(j = y; j < img.height(); j++)
-            CMP(w - 1, j, cropThreshold)
-        }
-    t = true;
-    for(h = img.height(); h > 0; h--)
-    {
-        for(j = x; j < w; j++)
-            CMP(j, h - 1, cropThreshold)
-        }
-found_by_color:
-    w = w - x;
-    h = h - y;
-    if(w < 0)
-    {
-        w = 0;
-    }
-    if(h < 0)
-    {
-        h = 0;
-    }
-    return QRect(x, y, w, h);
+
+	if(useGreenScreen && !doesImageHaveAlpha(img))
+	{
+		//crop only alpha
+		t = true;
+		for(y = 0; y < img.height(); y++)
+		{
+			for(j = 0; j < img.width(); j++)
+			{
+				t &= CMPF3(j, y, greenScreen);
+				if(!t) break;
+			}
+			if(!t) break;
+		}
+
+		t = true;
+		for(x = 0; x < img.width(); x++)
+		{
+			for(j = y; j < img.height(); j++)
+			{
+				t &= CMPF3(x, j, greenScreen);
+				if(!t) break;
+			}
+
+			if(!t) break;
+		}
+		t = true;
+		for(w = img.width(); w > 0; w--)
+		{
+			for(j = y; j < img.height(); j++)
+			{
+				t &= CMPF3(w - 1, j, greenScreen);
+				if(!t) break;
+			}
+
+			if(!t) break;
+		}
+		t = true;
+		for(h = img.height(); h > 0; h--)
+		{
+			for(j = x; j < w; j++)
+			{
+				t &= CMPF3(j, h - 1, greenScreen);
+				if(!t) break;
+			}
+
+			if(!t) break;
+		}
+	}
+	else
+	{
+		//crop only alpha
+		t = true;
+		for(y = 0; y < img.height(); y++)
+		{
+			for(j = 0; j < img.width(); j++)
+			{
+				t &= CMPF1(j, y, cropThreshold);
+				if(!t) break;
+			}
+
+			if(!t) break;
+		}
+
+		t = true;
+		for(x = 0; x < img.width(); x++)
+		{
+			for(j = y; j < img.height(); j++)
+			{
+				t &= CMPF1(x, j, cropThreshold);
+				if(!t) break;
+			}
+
+			if(!t) break;
+		}
+		t = true;
+		for(w = img.width(); w > 0; w--)
+		{
+			for(j = y; j < img.height(); j++)
+			{
+				t &= CMPF1(w - 1, j, cropThreshold);
+				if(!t) break;
+			}
+
+			if(!t) break;
+		}
+		t = true;
+		for(h = img.height(); h > 0; h--)
+		{
+			for(j = x; j < w; j++)
+			{
+				t &= CMPF1(j, h - 1, cropThreshold);
+				if(!t) break;
+			}
+
+			if(!t) break;
+		}
+	}
+
+    if(w < x) w = x;
+    if(h < y) h = y;
+
+    return QRect(x, y, w-x, h-y);
 }
+void ImagePacker::applyGreenScreen(QImage & image)
+{
+	if(!useGreenScreen
+	|| !greenScreenToAlpha
+	|| doesImageHaveAlpha(image)) return;
+
+	for(int y = 0; y < image.height(); ++y)
+	{
+		for(int x = 0; x < image.width(); ++x)
+		{
+			QRgb px = image.pixel(x, y);
+			if(px == greenScreen)
+				image.setPixel(x, y, 0L);
+		}
+	}
+}
+
+
+static bool doesImageHaveAlpha(const QImage & image)
+{
+	if(!image.hasAlphaChannel()) return false;
+
+	for(int y = 0; y < image.height(); ++y)
+	{
+		for(int x = 0; x < image.width(); ++x)
+		{
+			if(qAlpha(image.pixel(x, y)) < UCHAR_MAX)
+				return true;
+		}
+	}
+
+	return false;
+}
+
+#endif

@@ -3,70 +3,99 @@
 
 #include <QtGlobal>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-#   include <QtWidgets/QMainWindow>
-#   include <QtWidgets/QListWidget>
-#else
-#   include <QMainWindow>
-#   include <QListWidget>
-#endif
+#include <QMainWindow>
+#include <QListWidget>
 
 #include <QDropEvent>
 #include <QUrl>
 #include <QDrag>
+#include <QLabel>
 #include "imagepacker.h"
-
-extern QStringList imageExtensions;
 
 namespace Ui
 {
     class MainWindow;
 }
 
+class QShortcut;
+class SettingsPanel;
+class View;
+struct Document;
+class SpriteModel;
+
+
 class MainWindow : public QMainWindow
 {
+friend class SettingsPanel;
         Q_OBJECT
 
-    public:
-        explicit MainWindow(QWidget *parent = 0);
-        ~MainWindow();
+public:
+	explicit MainWindow(QWidget *parent = 0);
+	~MainWindow();
 
-    private:
-        Ui::MainWindow *ui;
-        void RecurseDirectory(const QString &dir);
-        QString topImageDir;
-        ImagePacker packer;
-        QList<packedImage> packedImageList;
-        bool exporting;
-        int recursiveLoaderCounter;
-        bool recursiveLoaderDone;
-        QPixmap pattern;
-        void addDir(QString dir);
-        struct packerData
-        {
-            QListWidgetItem *listItem;
-            QString path;
-        };
+	std::unique_ptr<Document>    document;
+	std::unique_ptr<SpriteModel> model;
 
-    protected:
-        void dropEvent(QDropEvent *event);
-        void dragEnterEvent(QDragEnterEvent *event);
-    signals:
-        void renderedImage(const QList<QImage> &image);
-    public slots:
-        void addTiles();
-        void deleteSelectedTiles();
-        void packerUpdate();
-        void updateAuto();
-        void setTextureSize2048();
-        void setTextureSize256();
-        void setTextureSize512();
-        void setTextureSize1024();
-        void updateAplhaThreshold();
-        void getFolder();
-        void exportImage();
-        void swapSizes();
-        void clearTiles();
+	QShortcut * m_delete{};
+	QString outDir;
+	QString outFile;
+	QString outFormat;
+	QString imgFormat;
+
+	Ui::MainWindow *ui{};
+
+	float SetZoom(float);
+	float GetZoom() { return m_zoom; };
+
+	glm::vec2 GetScroll();
+	void      SetScroll(glm::vec2 scroll);
+
+	void setZoomText(float);
+	bool selectTiles(int texture, QRect rect, Qt::KeyboardModifiers	 keys);
+	void packerRepaint();
+
+	void OnDocumentChanged();
+	void DisplayError(std::string const& what);
+	std::string GetImage();
+
+	bool SetAsterisk(bool value);
+
+protected:
+//	void dropEvent(QDropEvent *event);
+//	void dragEnterEvent(QDragEnterEvent *event);
+
+public:
+	bool fileOpen();
+	void deleteSelectedTiles();
+	void packerUpdate();
+	void updateAuto();
+	void updateAplhaThreshold();
+	void exportImage();
+	void clearTiles();
+
+private:
+	bool fileSave();
+	bool fileSaveAs();
+
+	void ImportSprite();
+	std::string GetSpritePath();
+	void displayStatus(quint64 image_area, quint64 packer_area, quint64 neededArea, int missingImages, int mergedImages);
+
+	View   * m_view{};
+	QLabel * m_status{};
+	QLabel * m_scale{};
+
+	SettingsPanel * prefs{};
+
+	void RecurseDirectory(const QString &dir);
+	QString topImageDir;
+
+	bool exporting{};
+	bool m_asterisk{};
+	bool recursiveLoaderDone{};
+	int recursiveLoaderCounter{};
+	float m_zoom{1.f};
+	void addDir(QString dir);
 };
 
 #endif // MAINWINDOW_H
